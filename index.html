@@ -1,19 +1,3461 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="vi">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vietnam Vector — công cụ chỉnh sửa</title>
-  <style>
-    body { font: 16px/1.5 system-ui, sans-serif; max-width: 720px; margin: 12vh auto; padding: 0 24px; color: #172033; }
-    h1 { font-size: 28px; }
-    a { display: inline-block; margin: 12px 12px 0 0; padding: 12px 16px; border-radius: 8px; background: #1769e0; color: white; text-decoration: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+```
+<title>Vietnam Vector Map</title>
+
+<!-- MapLibre -->
+<link
+    href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css"
+    rel="stylesheet"
+/>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    #map {
+        width: 100%;
+        height: 100%;
+    }
+
+    .map-info {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        z-index: 10;
+
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 10px;
+        padding: 10px 14px;
+
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .map-info strong {
+        font-size: 15px;
+    }
+
+    .route-panel {
+        position: absolute;
+        z-index: 12;
+        top: 82px;
+        left: 15px;
+        width: min(340px, calc(100vw - 30px));
+        padding: 12px;
+        border-radius: 10px;
+        background: rgba(255,255,255,.97);
+        box-shadow: 0 2px 12px rgba(0,0,0,.18);
+        font-size: 13px;
+    }
+    .route-panel input, .route-panel select {
+        width: 100%;
+        padding: 9px;
+        margin: 5px 0;
+        border: 1px solid #ccc;
+        border-radius: 7px;
+        font: inherit;
+    }
+    .route-actions { display: flex; gap: 7px; margin-top: 5px; }
+    .route-actions button {
+        flex: 1; border: 0; border-radius: 7px; padding: 9px;
+        background: #2864f0; color: white; font: inherit; cursor: pointer;
+    }
+    .route-actions button.secondary { background: #eef1f6; color: #222; }
+    #route-status { margin-top: 7px; color: #444; line-height: 1.4; }
+
+    .status {
+        color: #16803c;
+    }
+
+    .controls {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 10;
+
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .control-btn {
+        border: 0;
+        background: white;
+        width: 42px;
+        height: 42px;
+
+        border-radius: 8px;
+
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+
+        cursor: pointer;
+
+        font-size: 18px;
+    }
+
+    .control-btn:hover {
+        background: #f3f3f3;
+    }
+
+    .layer-panel {
+        position: absolute;
+        right: 15px;
+        bottom: 20px;
+
+        z-index: 10;
+
+        background: rgba(255, 255, 255, 0.96);
+
+        border-radius: 10px;
+
+        padding: 12px;
+
+        width: 190px;
+
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+
+        font-size: 13px;
+    }
+
+    .layer-panel-title {
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .layer-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 7px 0;
+        cursor: pointer;
+    }
+
+    .layer-item input {
+        cursor: pointer;
+    }
+
+    .legend {
+        position: absolute;
+        left: 15px;
+        bottom: 20px;
+
+        z-index: 10;
+
+        background: rgba(255, 255, 255, 0.95);
+
+        padding: 10px 12px;
+
+        border-radius: 8px;
+
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+
+        font-size: 12px;
+    }
+
+    .legend-row {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 5px 0;
+    }
+
+    .line {
+        width: 28px;
+        height: 4px;
+        border-radius: 4px;
+    }
+
+    .road {
+        background: #f5a623;
+    }
+
+    .water {
+        width: 28px;
+        height: 10px;
+        background: #83c5ed;
+        border-radius: 3px;
+    }
+
+    .building {
+        width: 14px;
+        height: 14px;
+        background: #d8c9b8;
+        border: 1px solid #9e8d7a;
+    }
+
+    .bridge {
+        background: #8e8e8e;
+    }
+
+    @media (max-width: 600px) {
+        .map-info {
+            top: 10px;
+            left: 10px;
+        }
+
+        .layer-panel {
+            right: 10px;
+            bottom: 10px;
+        }
+
+        .legend {
+            display: none;
+        }
+    }
+</style>
+```
+
+
+<style id="vietnam-vector-poi-icon-css">
+/* VIETNAM_VECTOR_POI_ICON_UI_V1 */
+
+.vietnam-poi-icon-panel {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    width: 350px;
+    max-height: 72vh;
+    z-index: 999999;
+    background: rgba(255,255,255,.98);
+    border: 1px solid #ddd;
+    border-radius: 14px;
+    box-shadow: 0 10px 35px rgba(0,0,0,.20);
+    overflow: hidden;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    color: #222;
+}
+
+.vietnam-poi-icon-header {
+    height: 46px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+    font-weight: 700;
+}
+
+.vietnam-poi-icon-close {
+    border: 0;
+    background: transparent;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.vietnam-poi-icon-body {
+    padding: 10px;
+    max-height: calc(72vh - 46px);
+    overflow-y: auto;
+}
+
+.vietnam-poi-icon-search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    margin-bottom: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+}
+
+.vietnam-poi-icon-status {
+    font-size: 11px;
+    color: #777;
+    margin-bottom: 8px;
+}
+
+.vietnam-poi-icon-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin-bottom: 9px;
+    background: #f6f6f6;
+    border-radius: 8px;
+}
+
+.vietnam-poi-icon-preview img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+}
+
+.vietnam-poi-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+}
+
+.vietnam-poi-icon-item {
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    background: #fff;
+    padding: 7px 3px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.vietnam-poi-icon-item:hover {
+    border-color: #777;
+    transform: translateY(-1px);
+}
+
+.vietnam-poi-icon-item img {
+    display: block;
+    width: 34px;
+    height: 34px;
+    margin: auto;
+    object-fit: contain;
+}
+
+.vietnam-poi-icon-name {
+    margin-top: 4px;
+    font-size: 9px;
+    line-height: 11px;
+    word-break: break-word;
+}
+</style>
+
+
+<style>
+
+
+
+</style>
+
+
+
+
+<style id="vietnam-location-search-css">
+
+#vietnam-location-search {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 99999;
+    width: 380px;
+    font-family: Arial, sans-serif;
+}
+
+.vietnam-location-search-inner {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.28);
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,.08);
+}
+
+.vietnam-location-search-icon {
+    width: 44px;
+    min-width: 44px;
+    text-align: center;
+    font-size: 19px;
+    user-select: none;
+}
+
+#vietnam-location-search-input {
+    flex: 1;
+    min-width: 0;
+    height: 48px;
+    border: 0;
+    outline: 0;
+    padding: 0 4px;
+    font-size: 15px;
+    background: #fff;
+    color: #222;
+}
+
+#vietnam-location-search-input::placeholder {
+    color: #888;
+}
+
+#vietnam-location-search-clear {
+    width: 42px;
+    height: 48px;
+    border: 0;
+    background: #fff;
+    color: #777;
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+    display: none;
+}
+
+#vietnam-location-search-clear:hover {
+    background: #f2f2f2;
+    color: #222;
+}
+
+.vietnam-location-search-results {
+    display: none;
+    margin-top: 7px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.28);
+    overflow: hidden;
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.vietnam-location-search-result {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+}
+
+.vietnam-location-search-result:last-child {
+    border-bottom: 0;
+}
+
+.vietnam-location-search-result:hover,
+.vietnam-location-search-result.active {
+    background: #f3f6f8;
+}
+
+.vietnam-location-search-result-icon {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef3f6;
+    font-size: 17px;
+}
+
+.vietnam-location-search-result-content {
+    min-width: 0;
+}
+
+.vietnam-location-search-result-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #222;
+}
+
+.vietnam-location-search-result-detail {
+    margin-top: 3px;
+    font-size: 12px;
+    color: #777;
+}
+
+.vietnam-location-search-empty {
+    padding: 16px;
+    color: #777;
+    font-size: 14px;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+
+    #vietnam-location-search {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+    }
+
+}
+
+</style>
+
 </head>
+
 <body>
-  <h1>Công cụ chỉnh sửa bản đồ</h1>
-  <p>Chọn công cụ để chỉnh giao diện hoặc cấu hình phong cách bản đồ.</p>
-  <a href="/theme-editor.html">Chỉnh màu và theme</a>
-  <a href="/style-editor.html">Chỉnh style</a>
+
+<!-- VIETNAM LOCATION SEARCH CONTAINER -->
+<div id="vietnam-location-search">
+
+    <div class="vietnam-location-search-inner">
+
+        <div class="vietnam-location-search-icon">
+            🔍
+        </div>
+
+        <input
+            id="vietnam-location-search-input"
+            type="text"
+            autocomplete="off"
+            placeholder="Tìm địa điểm..."
+            aria-label="Tìm địa điểm"
+        />
+
+        <button
+            id="vietnam-location-search-clear"
+            type="button"
+            aria-label="Xóa tìm kiếm"
+        >×</button>
+
+    </div>
+
+    <div
+        id="vietnam-location-search-results"
+        class="vietnam-location-search-results"
+    ></div>
+
+</div>
+<!-- END VIETNAM LOCATION SEARCH CONTAINER -->
+
+
+<div id="location-search-results"></div>
+</div>
+
+
+
+<div id="map"></div>
+
+<div class="map-info">
+    <strong>🇻🇳 Vietnam Vector Map</strong><br>
+    <span class="status" id="status">Đang tải bản đồ...</span>
+</div>
+
+<section class="route-panel" aria-label="Dẫn đường">
+    <strong>Dẫn đường</strong>
+    <input id="route-destination" type="text" placeholder="Nhập điểm đến hoặc tọa độ lon,lat" aria-label="Điểm đến">
+    <select id="route-mode" aria-label="Phương tiện">
+        <option value="driving">Ô tô</option>
+        <option value="motorcycle">Xe máy</option>
+        <option value="bicycle">Xe đạp</option>
+    </select>
+    <div class="route-actions">
+        <button id="route-start" type="button">Tìm đường & bắt đầu</button>
+        <button id="route-stop" class="secondary" type="button">Dừng</button>
+    </div>
+    <div id="route-status" role="status">Nhập điểm đến để tìm đường.</div>
+</section>
+
+<div class="controls">
+    <button class="control-btn" onclick="zoomIn()">+</button>
+    <button class="control-btn" onclick="zoomOut()">−</button>
+    <button class="control-btn" onclick="locateVietnam()">🇻🇳</button>
+</div>
+
+<div class="layer-panel">
+    <div class="layer-panel-title">Lớp bản đồ</div>
+
+```
+<label class="layer-item">
+    <input
+        type="checkbox"
+        checked
+        onchange="toggleLayerGroup('roads', this.checked)"
+    >
+    🛣️ Đường
+</label>
+
+<label class="layer-item">
+    <input
+        type="checkbox"
+        checked
+        onchange="toggleLayerGroup('buildings', this.checked)"
+    >
+    🏠 Nhà
+</label>
+
+<label class="layer-item">
+    <input
+        type="checkbox"
+        checked
+        onchange="toggleLayerGroup('water', this.checked)"
+    >
+    🌊 Sông / nước
+</label>
+
+<label class="layer-item">
+    <input
+        type="checkbox"
+        checked
+        onchange="toggleLayerGroup('places', this.checked)"
+    >
+    📍 Địa danh
+</label>
+
+<label class="layer-item">
+    <input
+        type="checkbox"
+        checked
+        onchange="toggleLayerGroup('bridges', this.checked)"
+    >
+    🌉 Cầu
+</label>
+```
+
+</div>
+
+<div class="legend">
+
+```
+<div class="legend-row">
+    <span class="line road"></span>
+    Đường
+</div>
+
+<div class="legend-row">
+    <span class="building"></span>
+    Nhà
+</div>
+
+<div class="legend-row">
+    <span class="water"></span>
+    Sông / hồ
+</div>
+
+<div class="legend-row">
+    <span class="line bridge"></span>
+    Cầu
+</div>
+```
+
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+
+<script>
+
+const API = window.VIETNAM_VECTOR_API || window.location.origin;
+
+const VIETNAM = [
+    106.6297,
+    10.8231
+];
+
+
+/*
+|--------------------------------------------------------------------------
+| MAP
+|--------------------------------------------------------------------------
+*/
+
+/*
+|--------------------------------------------------------------------------
+| VIETNAM VECTOR MAP THEME
+|--------------------------------------------------------------------------
+*/
+const MAP_THEME = {
+    background: "#F7F6F2",
+    water: "#DCEFF0",
+    waterLine: "#B9DDE0",
+    building: "#E8E6E1",
+    buildingOutline: "#D5D2CB",
+
+    roadMinor: "#FFFFFF",
+    roadMinorOutline: "#D8D8D8",
+
+    roadResidential: "#FFFFFF",
+    roadResidentialOutline: "#D8D8D8",
+
+    roadSecondary: "#FFFDF8",
+    roadSecondaryOutline: "#D0CEC7",
+
+    roadPrimary: "#FFF4C7",
+    roadPrimaryOutline: "#D5C98F",
+
+    roadMotorway: "#FFE29A",
+    roadMotorwayOutline: "#C7AA62",
+
+    bridge: "#FFFFFF",
+    bridgeOutline: "#8F8B83",
+
+    text: "#30302E",
+    textSecondary: "#73716C",
+    textHalo: "#FFFFFF",
+
+    route: "#2864F0",
+    routeOutline: "#FFFFFF",
+    marker: "#2864F0"
+};
+
+
+
+const map = new maplibregl.Map({
+
+    container: "map",
+
+    center: VIETNAM,
+
+    zoom: 6,
+
+    minZoom: 4,
+
+    maxZoom: 18,
+
+    attributionControl: true,
+
+    style: {
+
+        version: 8,
+
+        glyphs:
+            "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+
+        sources: {
+
+            /*
+            |--------------------------------------------------------------------------
+            | HIGHWAY
+            |--------------------------------------------------------------------------
+            */
+
+            highway: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/highway/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 4,
+
+                maxzoom: 14
+
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | BUILDING
+            |--------------------------------------------------------------------------
+            */
+
+            building: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/building/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 12,
+
+                maxzoom: 16
+
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | WATER
+            |--------------------------------------------------------------------------
+            */
+
+            water: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/water/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 5,
+
+                maxzoom: 14
+
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | PLACE
+            |--------------------------------------------------------------------------
+            */
+
+            place: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/place/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 4,
+
+                maxzoom: 14
+
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | BRIDGE
+            |--------------------------------------------------------------------------
+            */
+
+            bridge: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/bridge/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 8,
+
+                maxzoom: 16
+
+            }
+
+        },
+
+            poi: {
+                type: "vector",
+                tiles: [
+                    API +
+                    "/api/tiles/poi/{z}/{x}/{y}.pbf"
+                ],
+                minzoom: 11,
+                maxzoom: 20
+            },
+
+        layers: [
+            /*
+            |--------------------------------------------------------------------------
+            | BACKGROUND
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "background",
+
+                type: "background",
+
+                paint: {
+                    "background-color": "#f7f5f2"
+                }
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | WATER
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "water-fill",
+
+                type: "fill",
+
+                source: "water",
+
+                "source-layer": "water",
+
+                minzoom: 5,
+
+                paint: {
+                    "fill-color": "#9bd3f2",
+                    "fill-opacity": 0.8
+                }
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | WATER LINE
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "water-line",
+
+                type: "line",
+
+                source: "water",
+
+                "source-layer": "water",
+
+                minzoom: 7,
+
+                paint: {
+                    "line-color": "#6bbce8",
+                    "line-width": 1
+                }
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | BUILDINGS
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "building-fill",
+
+                type: "fill",
+
+                source: "building",
+
+                "source-layer": "building",
+
+                minzoom: 12,
+
+                paint: {
+
+                    "fill-color": "#d8c9b8",
+
+                    "fill-opacity": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+
+                        12, 0.25,
+
+                        15, 0.65,
+
+                        18, 0.9
+                    ]
+                }
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | BUILDING OUTLINE
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "building-outline",
+
+                type: "line",
+
+                source: "building",
+
+                "source-layer": "building",
+
+                minzoom: 13,
+
+                paint: {
+
+                    "line-color": "#a99783",
+
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+
+                        13, 0.3,
+
+                        16, 0.8
+                    ],
+
+                    "line-opacity": 0.6
+                }
+            },
+
+
+            
+            /*
+            |--------------------------------------------------------------------------
+            | ROADS - MOTORWAY OUTLINE
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "road-motorway-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 4,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    ["motorway", "motorway_link"],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadMotorwayOutline,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        4, 2.0,
+                        8, 3.0,
+                        10, 4.0,
+                        12, 5.5,
+                        14, 7.0,
+                        16, 9.0,
+                        18, 13
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+            {
+                id: "road-motorway",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 4,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    ["motorway", "motorway_link"],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadMotorway,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        4, 1.0,
+                        8, 1.5,
+                        10, 2.0,
+                        12, 3.0,
+                        14, 4.5,
+                        16, 6.5,
+                        18, 10
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+            /*
+            |--------------------------------------------------------------------------
+            | ROADS - PRIMARY OUTLINE
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "road-primary-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 4,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    ["primary", "primary_link"],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadPrimaryOutline,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        4, 1.7,
+                        8, 2.5,
+                        10, 3.2,
+                        12, 4.2,
+                        14, 5.8,
+                        16, 7.5,
+                        18, 11
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+            {
+                id: "road-primary",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 4,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    ["primary", "primary_link"],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadPrimary,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        4, 0.8,
+                        8, 1.3,
+                        10, 1.7,
+                        12, 2.5,
+                        14, 3.8,
+                        16, 5.5,
+                        18, 8.5
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+            /*
+            |--------------------------------------------------------------------------
+            | ROADS - SECONDARY OUTLINE
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "road-secondary-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 4,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    ["secondary", "secondary_link"],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadSecondaryOutline,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        4, 1.5,
+                        8, 2.2,
+                        10, 2.8,
+                        12, 3.7,
+                        14, 5.0,
+                        16, 6.5,
+                        18, 10
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+            {
+                id: "road-secondary",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 4,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    ["secondary", "secondary_link"],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadSecondary,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        4, 0.7,
+                        8, 1.2,
+                        10, 1.5,
+                        12, 2.3,
+                        14, 3.3,
+                        16, 4.7,
+                        18, 7.5
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+            /*
+            |--------------------------------------------------------------------------
+            | ROADS - RESIDENTIAL OUTLINE
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "road-residential-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 8,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    [
+                        "residential",
+                        "residential_link"
+                    ],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadResidentialOutline,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        8, 1.5,
+                        10, 1.9,
+                        12, 2.5,
+                        14, 3.6,
+                        16, 5.0,
+                        18, 7.5
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+            {
+                id: "road-residential",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 8,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    [
+                        "residential",
+                        "residential_link"
+                    ],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadResidential,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        8, 0.7,
+                        10, 0.9,
+                        12, 1.3,
+                        14, 2.2,
+                        16, 3.4,
+                        18, 5.5
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+            /*
+            |--------------------------------------------------------------------------
+            | ROADS - MINOR OUTLINE
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "road-minor-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 8,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    [
+                        "service",
+                        "unclassified",
+                        "living_street",
+                        "tertiary",
+                        "tertiary_link",
+                        "track",
+                        "path",
+                        "footway",
+                        "cycleway"
+                    ],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadMinorOutline,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        8, 1.3,
+                        10, 1.7,
+                        12, 2.2,
+                        14, 3.2,
+                        16, 4.5,
+                        18, 7
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+            {
+                id: "road-minor",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 8,
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                filter: [
+                    "match",
+                    ["get", "highway"],
+                    [
+                        "service",
+                        "unclassified",
+                        "living_street",
+                        "tertiary",
+                        "tertiary_link",
+                        "track",
+                        "path",
+                        "footway",
+                        "cycleway"
+                    ],
+                    true,
+                    false
+                ],
+                paint: {
+                    "line-color": MAP_THEME.roadMinor,
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        8, 0.5,
+                        10, 0.7,
+                        12, 1.0,
+                        14, 1.8,
+                        16, 2.8,
+                        18, 5
+                    ],
+                    "line-opacity": 1
+                }
+            },
+
+{
+                id: "road-label",
+                type: "symbol",
+                source: "highway",
+                "source-layer": "highway",
+                minzoom: 8,
+
+                filter: [
+                    "all",
+                    ["has", "name"],
+                    ["!=", ["get", "name"], ""]
+                ],
+
+                layout: {
+                    "symbol-placement": "line",
+                    "text-field": ["coalesce", ["get", "name"], ["get", "name_vi"], ["get", "name_en"], ["get", "brand"], ""],
+
+                    "text-font": [
+                        "Noto Sans Regular"
+                    ],
+
+                    "text-size": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+
+                        8, 8,
+                        10, 9,
+                        12, 10,
+                        14, 11,
+                        18, 13
+                    ],
+
+                    "text-padding": 4,
+                    "text-allow-overlap": false
+                },
+
+                paint: {
+                    "text-color": "#555555",
+                    "text-halo-color": "#ffffff",
+                    "text-halo-width": 1.5
+                }
+            },
+
+            /*
+            |--------------------------------------------------------------------------
+            | BRIDGE
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "bridge-line",
+
+                type: "line",
+
+                source: "bridge",
+
+                "source-layer": "bridge",
+
+                minzoom: 9,
+
+                paint: {
+
+                    "line-color": "#777777",
+
+                    "line-width": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+
+                        9, 2,
+
+                        14, 5,
+
+                        18, 12
+                    ]
+                }
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | BRIDGE NAME
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "bridge-label",
+
+                type: "symbol",
+
+                source: "bridge",
+
+                "source-layer": "bridge",
+
+                minzoom: 13,
+
+                layout: {
+
+                    "symbol-placement": "line",
+
+                    "text-field": [
+                        "coalesce",
+                        ["get", "name"],
+                        ""
+                    ],
+
+                    "text-size": 11,
+
+                    "text-font": [
+                        "Noto Sans Regular"
+                    ]
+                },
+
+                paint: {
+
+                    "text-color": "#555555",
+
+                    "text-halo-color": "#ffffff",
+
+                    "text-halo-width": 1.5
+                }
+            },
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | PLACES
+            |--------------------------------------------------------------------------
+            */
+
+            {
+                id: "place-label",
+
+                type: "symbol",
+
+                source: "place",
+
+                "source-layer": "place",
+
+                minzoom: 5,
+
+                layout: {
+
+                    "text-field": [
+                        "coalesce",
+                        ["get", "name"],
+                        ""
+                    ],
+
+                    "text-font": [
+                        "Noto Sans Bold"
+                    ],
+
+                    "text-size": [
+
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+
+                        5, 10,
+
+                        8, 13,
+
+                        12, 16,
+
+                        16, 18
+                    ],
+
+                    "text-anchor": "center",
+
+                    "text-allow-overlap": false
+                },
+
+                paint: {
+
+                    "text-color": "#333333",
+
+                    "text-halo-color": "#ffffff",
+
+                    "text-halo-width": 2
+                }
+            }
+
+        ]
+    }
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| NAVIGATION
+|--------------------------------------------------------------------------
+*/
+
+
+/*
+|--------------------------------------------------------------------------
+| VIETNAM_VECTOR_POI_RENDER_V1
+|--------------------------------------------------------------------------
+| Render POI points from vector tile layer "poi"
+| using SVG icons from /icons/*.svg
+|--------------------------------------------------------------------------
+*/
+
+(function () {
+
+    const POI_ICON_MAP = {
+        football: "soccer",
+        soccer: "soccer",
+        tennis: "tennis",
+        table_tennis: "table_tennis",
+        badminton: "badminton",
+        archery: "archery",
+        running: "running",
+        swimming: "swimming",
+        swimming_pool: "swimming_pool",
+        karting: "karting",
+        chess: "chess",
+        pitch: "pitch",
+        stadium: "stadium",
+        sports_centre: "sports_centre",
+        sports_center: "sports_centre",
+        cricket: "cricket",
+        sport: "sports",
+        sports: "sports",
+
+        restaurant: "restaurant",
+        cafe: "cafe",
+        fast_food: "fast_food",
+        bar: "bar",
+        pub: "pub",
+        hotel: "hotel",
+        guest_house: "guest_house",
+        hostel: "hostel",
+        motel: "hotel",
+
+        fuel: "fuel",
+        parking: "parking",
+        atm: "atm",
+        bank: "bank",
+        pharmacy: "pharmacy",
+        hospital: "hospital",
+        clinic: "clinic",
+        doctors: "doctors",
+        dentist: "dentist",
+
+        school: "school",
+        kindergarten: "kindergarten",
+        university: "university",
+        college: "university",
+        library: "library",
+
+        supermarket: "supermarket",
+        department_store: "department_store",
+        mall: "mall",
+        marketplace: "marketplace",
+
+        police: "police",
+        fire_station: "fire_station",
+        government: "government",
+        courthouse: "courthouse",
+        townhall: "townhall",
+
+        museum: "museum",
+        cinema: "cinema",
+        theatre: "theatre",
+        monument: "monument",
+        castle: "castle",
+
+        station: "station",
+        bus_station: "bus_station",
+        ferry_terminal: "ferry_terminal",
+        airport: "airport",
+
+        park: "park",
+        zoo: "zoo",
+        aquarium: "aquarium",
+        theme_park: "theme_park",
+        marina: "marina",
+        viewpoint: "viewpoint",
+
+        place_of_worship: "place_of_worship",
+        post_office: "post_office",
+        veterinary: "veterinary",
+        nursing_home: "nursing_home",
+
+        poi_default: "poi_default"
+    };
+
+
+    function poiIconName(properties) {
+
+        if (!properties) {
+            return "poi_default";
+        }
+
+        const subclass =
+            properties.subclass ||
+            properties.amenity ||
+            properties.shop ||
+            properties.tourism ||
+            properties.leisure ||
+            properties.railway ||
+            properties.highway ||
+            properties.office ||
+            "";
+
+        return POI_ICON_MAP[subclass] || "poi_default";
+    }
+
+
+    function loadPoiSvgImages() {
+
+        if (!map || !map.style) {
+            return;
+        }
+
+        const icons = new Set(
+            Object.values(POI_ICON_MAP)
+        );
+
+        icons.add("poi_default");
+
+        icons.forEach((name) => {
+
+            const id = "poi-icon-" + name;
+
+            if (map.hasImage(id)) {
+                return;
+            }
+
+            const url =
+                "/icons/" +
+                encodeURIComponent(name) +
+                ".svg";
+
+            const img = new Image();
+
+            img.onload = function () {
+
+                if (!map.hasImage(id)) {
+
+                    map.addImage(
+                        id,
+                        img,
+                        {
+                            pixelRatio: 2,
+                            sdf: false
+                        }
+                    );
+
+                }
+
+            };
+
+            img.onerror = function () {
+
+                console.warn(
+                    "POI icon not found:",
+                    url
+                );
+
+            };
+
+            img.src = url;
+
+        });
+
+    }
+
+
+    function addPoiLayers() {
+
+        /*
+         * IMPORTANT:
+         * source-layer MUST match server.js:
+         * layer: "poi"
+         */
+
+        if (!map.getSource("poi")) {
+
+            map.addSource("poi", {
+
+                type: "vector",
+
+                tiles: [
+                    location.origin +
+                    "/api/tiles/poi/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 0,
+                maxzoom: 20
+
+            });
+
+        }
+
+
+        loadPoiSvgImages();
+
+
+        if (!map.getLayer("poi-icons")) {
+
+            map.addLayer({
+
+                id: "poi-icons",
+
+                type: "symbol",
+
+                source: "poi",
+
+                "source-layer": "poi",
+
+                minzoom: 11,
+
+                maxzoom: 20,
+
+                layout: {
+
+                    "icon-image": [
+                        "concat",
+                        "poi-icon-",
+                        [
+                            "match",
+                            [
+                                "coalesce",
+                                ["get", "subclass"],
+                                ["get", "amenity"],
+                                ["get", "shop"],
+                                ["get", "tourism"],
+                                ["get", "leisure"],
+                                ["get", "railway"],
+                                ["get", "highway"],
+                                ["get", "office"],
+                                ""
+                            ],
+
+                            "sport", "sports",
+                            "sports", "sports",
+                            "cricket", "cricket",
+                            "soccer", "soccer",
+                            "football", "soccer",
+                            "tennis", "tennis",
+                            "pitch", "pitch",
+                            "sports_centre", "sports_centre",
+                            "sports_center", "sports_centre",
+                            "stadium", "stadium",
+
+                            "restaurant", "restaurant",
+                            "cafe", "cafe",
+                            "fast_food", "fast_food",
+                            "bar", "bar",
+                            "pub", "pub",
+                            "hotel", "hotel",
+                            "guest_house", "guest_house",
+                            "hostel", "hostel",
+                            "motel", "motel",
+                            "fuel", "fuel",
+                            "parking", "parking",
+                            "motorcycle_parking", "motorcycle_parking",
+                            "charging_station", "charging_station",
+                            "atm", "atm",
+                            "bank", "bank",
+                            "pharmacy", "pharmacy",
+                            "hospital", "hospital",
+                            "clinic", "clinic",
+                            "doctors", "doctors",
+                            "dentist", "dentist",
+                            "school", "school",
+                            "kindergarten", "kindergarten",
+                            "college", "college",
+                            "university", "university",
+                            "police", "police",
+                            "fire_station", "fire_station",
+                            "supermarket", "supermarket",
+                            "marketplace", "marketplace",
+                            "bus_stop", "bus_stop",
+                            "bus_station", "bus_station",
+                            "station", "station",
+                            "bicycle", "bicycle",
+                            "bicycle_parking", "bicycle_parking",
+                            "bicycle_rental", "bicycle_rental",
+                            "toilets", "toilets",
+                            "viewpoint", "viewpoint",
+                            "attraction", "attraction",
+                            "artwork", "artwork",
+                            "museum", "museum",
+                            "monument", "monument",
+                            "place_of_worship", "place_of_worship",
+                            "bakery", "bakery",
+                            "clothes", "clothes",
+                            "shoes", "shoes",
+                            "electronics", "electronics",
+                            "mobile_phone", "mobile_phone",
+                            "books", "books",
+                            "hairdresser", "hairdresser",
+                            "beauty", "beauty",
+                            "massage", "massage",
+                            "post_office", "post_office",
+                            "information", "information",
+                            "travel_agency", "travel_agency",
+                            "cinema", "cinema",
+                            "theatre", "theatre",
+                            "nightclub", "nightclub",
+                            "ferry_terminal", "ferry_terminal",
+                            "toll_booth", "toll_booth",
+                            "convenience", "convenience",
+                            "department_store", "department_store",
+                            "car_repair", "car_repair",
+                            "motorcycle", "motorcycle",
+                            "community_centre", "community_centre",
+                            "library", "library",
+                            "playground", "playground",
+                            "park", "park",
+
+                            "poi_default"
+                        ]
+                    ],
+
+                    "icon-size": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        11, 0.45,
+                        13, 0.60,
+                        15, 0.75,
+                        18, 0.95
+                    ],
+
+                    "icon-anchor": "bottom",
+
+                    "icon-allow-overlap": true,
+
+                    "icon-ignore-placement": false,
+
+                    "visibility": "visible"
+
+                }
+
+            });
+
+        }
+
+
+        if (!map.getLayer("poi-labels")) {
+
+            map.addLayer({
+
+                id: "poi-labels",
+
+                type: "symbol",
+
+                source: "poi",
+
+                "source-layer": "poi",
+
+                minzoom: 14,
+
+                maxzoom: 20,
+
+                filter: [
+                    "any",
+                    ["has", "name"],
+                    ["has", "name_vi"],
+                    ["has", "name_en"],
+                    ["has", "brand"]
+                ],
+
+                layout: {
+
+                    "text-field": [
+                        "coalesce",
+                        ["get", "name"],
+                        ["get", "name_vi"],
+                        ["get", "name_en"],
+                        ["get", "brand"],
+                        ""
+                    ],
+
+                    "text-size": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        14, 9,
+                        16, 10,
+                        18, 12
+                    ],
+
+                    "text-offset": [
+                        0,
+                        1.2
+                    ],
+
+                    "text-anchor": "top",
+
+                    "text-allow-overlap": false,
+
+                    "text-ignore-placement": false
+
+                },
+
+                paint: {
+
+                    "text-color": "#333333",
+
+                    "text-halo-color": "#ffffff",
+
+                    "text-halo-width": 1.5
+
+                }
+
+            });
+
+        }
+
+    }
+
+
+    /*
+     * Map already exists in this page.
+     */
+
+    if (typeof map !== "undefined") {
+
+        if (map.isStyleLoaded()) {
+
+            addPoiLayers();
+
+        } else {
+
+            map.once(
+                "load",
+                addPoiLayers
+            );
+
+        }
+
+        map.on(
+            "style.load",
+            function () {
+
+                setTimeout(
+                    addPoiLayers,
+                    100
+                );
+
+            }
+        );
+
+    }
+
+})();
+
+
+/*
+|--------------------------------------------------------------------------
+| VIETNAM VECTOR ROUTE RENDER
+|--------------------------------------------------------------------------
+|
+| Route is rendered using two MapLibre line layers:
+|
+|   route-outline
+|       outer border
+|
+|   route
+|       main route
+|
+| Both layers use the same GeoJSON source.
+|
+|--------------------------------------------------------------------------
+*/
+
+(function () {
+
+    const EMPTY_ROUTE = {
+        type: "FeatureCollection",
+        features: []
+    };
+
+    function addRouteLayers() {
+
+        if (!map.getSource("vietnam-route")) {
+
+            map.addSource("vietnam-route", {
+
+                type: "geojson",
+
+                data: EMPTY_ROUTE
+
+            });
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ROUTE OUTLINE
+        |--------------------------------------------------------------------------
+        */
+
+        if (!map.getLayer("route-outline")) {
+
+            map.addLayer({
+
+                id: "route-outline",
+
+                type: "line",
+
+                source: "vietnam-route",
+
+                layout: {
+
+                    "line-cap": "round",
+
+                    "line-join": "round"
+
+                },
+
+                paint: {
+
+                    "line-color":
+                        typeof theme !== "undefined"
+                            ? MAP_THEME.routeOutline
+                            : "#FFFFFF",
+
+                    "line-width": [
+
+                        "interpolate",
+
+                        ["linear"],
+
+                        ["zoom"],
+
+                        4, 5,
+
+                        8, 6,
+
+                        10, 7,
+
+                        12, 8,
+
+                        14, 9,
+
+                        16, 10,
+
+                        18, 12
+
+                    ],
+
+                    "line-opacity": 1
+
+                }
+
+            });
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | MAIN ROUTE
+        |--------------------------------------------------------------------------
+        */
+
+        if (!map.getLayer("route")) {
+
+            map.addLayer({
+
+                id: "route",
+
+                type: "line",
+
+                source: "vietnam-route",
+
+                layout: {
+
+                    "line-cap": "round",
+
+                    "line-join": "round"
+
+                },
+
+                paint: {
+
+                    "line-color":
+                        typeof theme !== "undefined"
+                            ? MAP_THEME.route
+                            : "#2864F0",
+
+                    "line-width": [
+
+                        "interpolate",
+
+                        ["linear"],
+
+                        ["zoom"],
+
+                        4, 2,
+
+                        8, 3,
+
+                        10, 4,
+
+                        12, 5,
+
+                        14, 6,
+
+                        16, 7,
+
+                        18, 8
+
+                    ],
+
+                    "line-opacity": 1
+
+                }
+
+            });
+
+        }
+
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SET ROUTE
+    |--------------------------------------------------------------------------
+    */
+
+    window.setVietnamRoute = function (geojson) {
+
+        if (!geojson) {
+            return;
+        }
+
+        const source = map.getSource("vietnam-route");
+
+        if (!source) {
+
+            console.warn(
+                "Vietnam route source is not ready"
+            );
+
+            return;
+
+        }
+
+        source.setData(geojson);
+
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | CLEAR ROUTE
+    |--------------------------------------------------------------------------
+    */
+
+    window.clearVietnamRoute = function () {
+
+        const source = map.getSource("vietnam-route");
+
+        if (!source) {
+            return;
+        }
+
+        source.setData(EMPTY_ROUTE);
+
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | MAP LOAD
+    |--------------------------------------------------------------------------
+    */
+
+    map.on("load", function () {
+
+        addRouteLayers();
+
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    
+/* ============================================================
+   ROAD OUTLINE COLORS
+   ============================================================ */
+
+function getRoadOutlineColor(key, fallback) {
+    if (typeof theme !== "undefined" &&
+        theme &&
+        theme[key]) {
+        return theme[key];
+    }
+
+    return fallback;
+}
+
+function getRoadOutlineColors() {
+    return {
+        motorway: getRoadOutlineColor(
+            "roadMotorwayOutline",
+            "#C7AA62"
+        ),
+
+        primary: getRoadOutlineColor(
+            "roadPrimaryOutline",
+            "#D5C98F"
+        ),
+
+        secondary: getRoadOutlineColor(
+            "roadSecondaryOutline",
+            "#D0CEC7"
+        ),
+
+        residential: getRoadOutlineColor(
+            "roadResidentialOutline",
+            "#D8D8D8"
+        ),
+
+        minor: getRoadOutlineColor(
+            "roadMinorOutline",
+            "#D8D8D8"
+        )
+    };
+}
+
+/*
+    | STYLE RELOAD
+    |--------------------------------------------------------------------------
+    */
+
+    map.on("style.load", function () {
+
+        setTimeout(function () {
+
+            addRouteLayers();
+
+        }, 50);
+
+    });
+
+})();
+
+
+
+map.addControl(
+    new maplibregl.NavigationControl(),
+    "bottom-right"
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| MAP LOAD
+|--------------------------------------------------------------------------
+*/
+
+map.on("load", () => {
+
+    document.getElementById("status").textContent =
+        "Bản đồ đã sẵn sàng";
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| ERROR
+|--------------------------------------------------------------------------
+*/
+
+    map.on("error", (event) => {
+
+    console.error("MapLibre error:", event.error);
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| ZOOM
+|--------------------------------------------------------------------------
+*/
+
+function zoomIn() {
+
+    map.zoomIn();
+
+}
+
+
+function zoomOut() {
+
+    map.zoomOut();
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| VIETNAM
+|--------------------------------------------------------------------------
+*/
+
+function locateVietnam() {
+
+    map.flyTo({
+
+        center: VIETNAM,
+
+        zoom: 6,
+
+        speed: 1.2,
+
+        curve: 1.2
+
+    });
+
+// Live navigation and off-route recovery.
+(function setupNavigation() {
+    const destinationInput = document.getElementById("route-destination");
+    const status = document.getElementById("route-status");
+    const startButton = document.getElementById("route-start");
+    const stopButton = document.getElementById("route-stop");
+    let watchId = null;
+    let destination = "";
+    let activeRoute = [];
+    let offRouteFixes = 0;
+    let lastRerouteAt = 0;
+    let rerouting = false;
+    let positionMarker = null;
+
+    function setStatus(message) { status.textContent = message; }
+
+    function pointSegmentDistanceMeters(point, a, b) {
+        const lat0 = point[1] * Math.PI / 180;
+        const scaleX = 111320 * Math.cos(lat0);
+        const scaleY = 110540;
+        const px = (point[0] - a[0]) * scaleX;
+        const py = (point[1] - a[1]) * scaleY;
+        const bx = (b[0] - a[0]) * scaleX;
+        const by = (b[1] - a[1]) * scaleY;
+        const denom = bx * bx + by * by;
+        const t = denom ? Math.max(0, Math.min(1, (px * bx + py * by) / denom)) : 0;
+        return Math.hypot(px - t * bx, py - t * by);
+    }
+
+    function distanceFromRoute(point) {
+        let nearest = Infinity;
+        for (let i = 1; i < activeRoute.length; i++) {
+            nearest = Math.min(nearest, pointSegmentDistanceMeters(point, activeRoute[i - 1], activeRoute[i]));
+        }
+        return nearest;
+    }
+
+    async function requestRoute(point, isReroute = false) {
+        if (rerouting) return;
+        rerouting = true;
+        if (isReroute) setStatus("Bạn đã lệch tuyến. Đang tìm đường mới...");
+        try {
+            const params = new URLSearchParams({
+                origin: `${point[0]},${point[1]}`,
+                destination,
+                mode: document.getElementById("route-mode").value,
+            });
+            const response = await fetch(`${API}/directions?${params}`);
+            const data = await response.json();
+            if (!response.ok || !Array.isArray(data.coordinates) || data.coordinates.length < 2) {
+                throw new Error(data.error || "Không tìm được tuyến đường.");
+            }
+            activeRoute = data.coordinates;
+            window.setVietnamRoute({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: activeRoute } });
+            if (isReroute) setStatus(`Đã cập nhật tuyến mới · ${data.distance_km} · ${data.duration_text}`);
+            else setStatus(`Đã tìm thấy tuyến · ${data.distance_km} · ${data.duration_text}. Đang theo dõi vị trí.`);
+            offRouteFixes = 0;
+        } catch (error) {
+            setStatus(error.message || "Lỗi khi tìm tuyến đường.");
+        } finally {
+            rerouting = false;
+        }
+    }
+
+    function onPosition(position) {
+        const point = [position.coords.longitude, position.coords.latitude];
+        if (!positionMarker) {
+            positionMarker = new maplibregl.Marker({ color: "#1769ff" }).setLngLat(point).addTo(map);
+        } else positionMarker.setLngLat(point);
+
+        if (!activeRoute.length) return;
+        const deviation = distanceFromRoute(point);
+        const threshold = Math.max(50, Math.min(100, (position.coords.accuracy || 0) + 25));
+        if (deviation > threshold) offRouteFixes++;
+        else offRouteFixes = 0;
+
+        if (offRouteFixes >= 2 && Date.now() - lastRerouteAt > 10000 && !rerouting) {
+            lastRerouteAt = Date.now();
+            requestRoute(point, true);
+        }
+    }
+
+    function stopNavigation(message = "Đã dừng dẫn đường.") {
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        activeRoute = [];
+        offRouteFixes = 0;
+        if (positionMarker) { positionMarker.remove(); positionMarker = null; }
+        window.clearVietnamRoute();
+        setStatus(message);
+    }
+
+    startButton.addEventListener("click", () => {
+        destination = destinationInput.value.trim();
+        if (!destination) { setStatus("Hãy nhập điểm đến trước."); destinationInput.focus(); return; }
+        if (!navigator.geolocation) { setStatus("Trình duyệt không hỗ trợ định vị GPS."); return; }
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        activeRoute = [];
+        setStatus("Đang lấy vị trí hiện tại...");
+        navigator.geolocation.getCurrentPosition((position) => {
+            onPosition(position);
+            requestRoute([position.coords.longitude, position.coords.latitude]);
+            if (watchId === null) {
+                watchId = navigator.geolocation.watchPosition(onPosition, (error) => {
+                    setStatus(`Không cập nhật được GPS: ${error.message}`);
+                }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 });
+            }
+        }, (error) => setStatus(`Không lấy được vị trí: ${error.message}. Hãy cấp quyền vị trí và dùng HTTPS.`),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+    });
+    stopButton.addEventListener("click", () => stopNavigation());
+})();
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TOGGLE LAYER GROUP
+|--------------------------------------------------------------------------
+*/
+
+function toggleLayerGroup(group, visible) {
+
+    const visibility =
+        visible ? "visible" : "none";
+
+
+    let ids = [];
+
+
+    if (group === "roads") {
+
+        ids = [
+            "road-minor",
+            "road-secondary",
+            "road-primary",
+            "road-motorway",
+            "road-label"
+        ];
+
+    }
+
+
+    if (group === "buildings") {
+
+        ids = [
+            "building-fill",
+            "building-outline"
+        ];
+
+    }
+
+
+    if (group === "water") {
+
+        ids = [
+            "water-fill",
+            "water-line"
+        ];
+
+    }
+
+
+    if (group === "places") {
+
+        ids = [
+            "place-label"
+        ];
+
+    }
+
+
+    if (group === "bridges") {
+
+        ids = [
+            "bridge-line",
+            "bridge-label"
+        ];
+
+    }
+
+
+    ids.forEach(id => {
+
+        if (map.getLayer(id)) {
+
+            map.setLayoutProperty(
+                id,
+                "visibility",
+                visibility
+            );
+
+        }
+
+    });
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CLICK FEATURE
+|--------------------------------------------------------------------------
+*/
+
+map.on("click", (event) => {
+
+    const features =
+        map.queryRenderedFeatures(
+            event.point
+        );
+
+
+    if (!features.length) {
+
+        return;
+
+    }
+
+
+    const feature =
+        features.find(f => {
+
+            return (
+                f.properties &&
+                (
+                    f.properties.name ||
+                    f.properties.ref ||
+                    f.properties.highway
+                )
+            );
+
+        });
+
+
+    if (!feature) {
+
+        return;
+
+    }
+
+
+    const properties =
+        feature.properties || {};
+
+
+    let html = "";
+
+
+    if (properties.name) {
+
+        html +=
+            `<strong>${escapeHtml(properties.name)}</strong>`;
+
+    }
+
+
+    if (properties.highway) {
+
+        html +=
+            `<br>Loại: ${escapeHtml(properties.highway)}`;
+
+    }
+
+
+    if (properties.ref) {
+
+        html +=
+            `<br>Mã đường: ${escapeHtml(properties.ref)}`;
+
+    }
+
+
+    if (!html) {
+
+        return;
+
+    }
+
+
+    new maplibregl.Popup()
+
+        .setLngLat(event.lngLat)
+
+        .setHTML(html)
+
+        .addTo(map);
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| ESCAPE HTML
+|--------------------------------------------------------------------------
+*/
+
+function escapeHtml(value) {
+
+    return String(value)
+
+        .replaceAll("&", "&amp;")
+
+        .replaceAll("<", "&lt;")
+
+        .replaceAll(">", "&gt;")
+
+        .replaceAll('"', "&quot;")
+
+        .replaceAll("'", "&#039;");
+
+}
+
+</script>
+
+
+<script id="vietnam-vector-poi-icon-js">
+/* VIETNAM_VECTOR_POI_ICON_UI_V1 */
+
+(function () {
+    "use strict";
+
+    if (window.VietnamVectorPOIIconUI) return;
+    window.VietnamVectorPOIIconUI = true;
+
+    let allIcons = [];
+
+    function esc(value) {
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function render(list) {
+
+        const grid = document.getElementById(
+            "vietnam-poi-icon-grid"
+        );
+
+        if (!grid) return;
+
+        grid.innerHTML = "";
+
+        list.forEach(function (name) {
+
+            const button = document.createElement("button");
+
+            button.type = "button";
+            button.className = "vietnam-poi-icon-item";
+
+            button.innerHTML = `
+                <img
+                    src="/icons/${encodeURIComponent(name)}.svg"
+                    alt="${esc(name)}"
+                    loading="lazy"
+                >
+                <div class="vietnam-poi-icon-name">
+                    ${esc(name)}
+                </div>
+            `;
+
+            button.addEventListener("click", function () {
+
+                const url =
+                    "/icons/" +
+                    encodeURIComponent(name) +
+                    ".svg";
+
+                const preview =
+                    document.getElementById(
+                        "vietnam-poi-icon-preview"
+                    );
+
+                if (preview) {
+
+                    preview.innerHTML = `
+                        <img src="${url}" alt="${esc(name)}">
+                        <div>
+                            <strong>${esc(name)}</strong>
+                            <div style="font-size:10px;color:#777">
+                                ${esc(url)}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                window.dispatchEvent(
+                    new CustomEvent(
+                        "vietnam-poi-icon-selected",
+                        {
+                            detail: {
+                                icon: name,
+                                url: url
+                            }
+                        }
+                    )
+                );
+
+                console.log(
+                    "[Vietnam Vector] selected icon:",
+                    name
+                );
+            });
+
+            grid.appendChild(button);
+        });
+    }
+
+    async function loadIcons() {
+
+        const status =
+            document.getElementById(
+                "vietnam-poi-icon-status"
+            );
+
+        try {
+
+            const response =
+                await fetch("/api/icons", {
+                    cache: "no-store"
+                });
+
+            if (!response.ok) {
+                throw new Error(
+                    "HTTP " + response.status
+                );
+            }
+
+            const data = await response.json();
+
+            allIcons = Array.from(
+                new Set(
+                    Object.values(
+                        data.icons || {}
+                    )
+                )
+            )
+            .filter(Boolean)
+            .sort();
+
+            status.textContent =
+                "Loaded " +
+                allIcons.length +
+                " POI icons";
+
+            render(allIcons);
+
+        } catch (error) {
+
+            status.textContent =
+                "Icon API error: " +
+                error.message;
+        }
+    }
+
+    function createPanel() {
+
+        if (
+            document.getElementById(
+                "vietnam-poi-icon-panel"
+            )
+        ) {
+            return;
+        }
+
+        const panel =
+            document.createElement("div");
+
+        panel.id =
+            "vietnam-poi-icon-panel";
+
+        panel.className =
+            "vietnam-poi-icon-panel";
+
+        panel.innerHTML = `
+            <div class="vietnam-poi-icon-header">
+                <span>POI Icons</span>
+                <button
+                    id="vietnam-poi-icon-close"
+                    class="vietnam-poi-icon-close"
+                >×</button>
+            </div>
+
+            <div class="vietnam-poi-icon-body">
+
+                <div
+                    id="vietnam-poi-icon-status"
+                    class="vietnam-poi-icon-status"
+                >
+                    Loading...
+                </div>
+
+                <div
+                    id="vietnam-poi-icon-preview"
+                    class="vietnam-poi-icon-preview"
+                >
+                    <img src="/icons/poi_default.svg">
+                    <div>
+                        <strong>poi_default</strong>
+                        <div style="font-size:10px;color:#777">
+                            Default icon
+                        </div>
+                    </div>
+                </div>
+
+                <input
+                    id="vietnam-poi-icon-search"
+                    class="vietnam-poi-icon-search"
+                    placeholder="Search restaurant, hotel, hospital..."
+                >
+
+                <div
+                    id="vietnam-poi-icon-grid"
+                    class="vietnam-poi-icon-grid"
+                ></div>
+
+            </div>
+        `;
+
+        document.body.appendChild(panel);
+
+        document
+            .getElementById("vietnam-poi-icon-close")
+            .onclick = function () {
+                panel.remove();
+            };
+
+        document
+            .getElementById("vietnam-poi-icon-search")
+            .addEventListener(
+                "input",
+                function () {
+
+                    const q =
+                        this.value
+                            .trim()
+                            .toLowerCase();
+
+                    render(
+                        q
+                            ? allIcons.filter(
+                                x =>
+                                    x.toLowerCase()
+                                     .includes(q)
+                              )
+                            : allIcons
+                    );
+                }
+            );
+
+        loadIcons();
+    }
+
+    window.openVietnamPOIIcons = createPanel;
+
+    if (
+        document.readyState === "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            createPanel
+        );
+
+    } else {
+
+        createPanel();
+    }
+
+})();
+</script>
+
+
+
+<script id="vietnam-location-search-js">
+(function () {
+
+    "use strict";
+
+    /*
+     * ==========================================================
+     * VIETNAM LOCATION SEARCH
+     * ==========================================================
+     */
+
+    const locations = [
+
+        {
+            name: "Hồ Chí Minh",
+            aliases: [
+                "ho chi minh",
+                "ho chi minh city",
+                "tphcm",
+                "tp hcm",
+                "tp. hcm",
+                "tp ho chi minh",
+                "thanh pho ho chi minh",
+                "sai gon",
+                "saigon"
+            ],
+            detail: "Thành phố Hồ Chí Minh",
+            center: [106.6297, 10.8231],
+            zoom: 11,
+            icon: "📍"
+        },
+
+        {
+            name: "Hà Nội",
+            aliases: [
+                "ha noi",
+                "hanoi",
+                "thu do ha noi"
+            ],
+            detail: "Thủ đô Hà Nội",
+            center: [105.8342, 21.0278],
+            zoom: 11,
+            icon: "📍"
+        },
+
+        {
+            name: "Đà Nẵng",
+            aliases: [
+                "da nang",
+                "danang",
+                "tp da nang",
+                "thanh pho da nang"
+            ],
+            detail: "Thành phố Đà Nẵng",
+            center: [108.2022, 16.0544],
+            zoom: 12,
+            icon: "📍"
+        },
+
+        {
+            name: "Hải Phòng",
+            aliases: [
+                "hai phong",
+                "haiphong",
+                "tp hai phong"
+            ],
+            detail: "Thành phố Hải Phòng",
+            center: [106.6881, 20.8449],
+            zoom: 11,
+            icon: "📍"
+        },
+
+        {
+            name: "Cần Thơ",
+            aliases: [
+                "can tho",
+                "cantho",
+                "tp can tho"
+            ],
+            detail: "Thành phố Cần Thơ",
+            center: [105.7469, 10.0452],
+            zoom: 11,
+            icon: "📍"
+        }
+
+    ];
+
+    function normalize(value) {
+
+        return String(value || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/đ/g, "d")
+            .replace(/[^a-z0-9\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+    }
+
+    function init() {
+
+        const input =
+            document.getElementById(
+                "vietnam-location-search-input"
+            );
+
+        const clearButton =
+            document.getElementById(
+                "vietnam-location-search-clear"
+            );
+
+        const results =
+            document.getElementById(
+                "vietnam-location-search-results"
+            );
+
+        const container =
+            document.getElementById(
+                "vietnam-location-search"
+            );
+
+        if (!input || !clearButton || !results || !container) {
+
+            console.error(
+                "VIETNAM LOCATION SEARCH: DOM NOT FOUND"
+            );
+
+            return;
+
+        }
+
+        let activeIndex = -1;
+
+        function hideResults() {
+
+            results.innerHTML = "";
+            results.style.display = "none";
+            activeIndex = -1;
+
+        }
+
+        function showResults() {
+
+            const query = normalize(input.value);
+
+            results.innerHTML = "";
+            activeIndex = -1;
+
+            if (!query) {
+
+                hideResults();
+                return;
+
+            }
+
+            const matches = locations.filter(function (item) {
+
+                const values = [
+                    item.name,
+                    item.detail,
+                    ...(item.aliases || [])
+                ];
+
+                return values.some(function (value) {
+
+                    return normalize(value).includes(query);
+
+                });
+
+            });
+
+            if (!matches.length) {
+
+                const empty =
+                    document.createElement("div");
+
+                empty.className =
+                    "vietnam-location-search-empty";
+
+                empty.textContent =
+                    "Không tìm thấy địa điểm";
+
+                results.appendChild(empty);
+
+                results.style.display = "block";
+
+                return;
+
+            }
+
+            matches.forEach(function (item, index) {
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "vietnam-location-search-result";
+
+                row.dataset.index = String(index);
+
+                row.innerHTML =
+
+                    '<div class="vietnam-location-search-result-icon">' +
+                        item.icon +
+                    '</div>' +
+
+                    '<div class="vietnam-location-search-result-content">' +
+
+                        '<div class="vietnam-location-search-result-name">' +
+                            item.name +
+                        '</div>' +
+
+                        '<div class="vietnam-location-search-result-detail">' +
+                            item.detail +
+                        '</div>' +
+
+                    '</div>';
+
+                row.addEventListener("mousedown", function (event) {
+
+                    event.preventDefault();
+
+                });
+
+                row.addEventListener("click", function () {
+
+                    selectLocation(item);
+
+                });
+
+                results.appendChild(row);
+
+            });
+
+            results.style.display = "block";
+
+        }
+
+        function selectLocation(item) {
+
+            if (
+                typeof map === "undefined" ||
+                !map ||
+                typeof map.flyTo !== "function"
+            ) {
+
+                console.error(
+                    "VIETNAM LOCATION SEARCH: map is not available"
+                );
+
+                return;
+
+            }
+
+            map.flyTo({
+
+                center: item.center,
+
+                zoom: item.zoom,
+
+                speed: 1.2,
+
+                curve: 1.4,
+
+                essential: true
+
+            });
+
+            input.value = item.name;
+
+            clearButton.style.display = "block";
+
+            hideResults();
+
+            if (typeof updateStatus === "function") {
+
+                try {
+
+                    updateStatus(
+                        "Đã chọn: " + item.name
+                    );
+
+                } catch (e) {}
+
+            }
+
+            console.log(
+                "LOCATION SEARCH: selected",
+                item.name,
+                item.center
+            );
+
+        }
+
+        function moveActive(direction) {
+
+            const rows =
+                Array.from(
+                    results.querySelectorAll(
+                        ".vietnam-location-search-result"
+                    )
+                );
+
+            if (!rows.length) {
+                return;
+            }
+
+            activeIndex += direction;
+
+            if (activeIndex < 0) {
+                activeIndex = rows.length - 1;
+            }
+
+            if (activeIndex >= rows.length) {
+                activeIndex = 0;
+            }
+
+            rows.forEach(function (row, index) {
+
+                row.classList.toggle(
+                    "active",
+                    index === activeIndex
+                );
+
+            });
+
+        }
+
+        input.addEventListener("input", function () {
+
+            clearButton.style.display =
+                input.value.trim()
+                    ? "block"
+                    : "none";
+
+            showResults();
+
+        });
+
+        input.addEventListener("focus", function () {
+
+            if (input.value.trim()) {
+
+                showResults();
+
+            }
+
+        });
+
+        input.addEventListener("keydown", function (event) {
+
+            if (event.key === "ArrowDown") {
+
+                event.preventDefault();
+
+                moveActive(1);
+
+                return;
+
+            }
+
+            if (event.key === "ArrowUp") {
+
+                event.preventDefault();
+
+                moveActive(-1);
+
+                return;
+
+            }
+
+            if (event.key === "Enter") {
+
+                event.preventDefault();
+
+                const rows =
+                    Array.from(
+                        results.querySelectorAll(
+                            ".vietnam-location-search-result"
+                        )
+                    );
+
+                if (
+                    activeIndex >= 0 &&
+                    rows[activeIndex]
+                ) {
+
+                    rows[activeIndex].click();
+                    return;
+
+                }
+
+                const query =
+                    normalize(input.value);
+
+                const match =
+                    locations.find(function (item) {
+
+                        const values = [
+                            item.name,
+                            item.detail,
+                            ...(item.aliases || [])
+                        ];
+
+                        return values.some(function (value) {
+
+                            return normalize(value) === query;
+
+                        });
+
+                    });
+
+                if (match) {
+
+                    selectLocation(match);
+
+                } else {
+
+                    showResults();
+
+                }
+
+                return;
+
+            }
+
+            if (event.key === "Escape") {
+
+                hideResults();
+
+            }
+
+        });
+
+        clearButton.addEventListener("click", function () {
+
+            input.value = "";
+
+            clearButton.style.display = "none";
+
+            hideResults();
+
+            input.focus();
+
+        });
+
+        document.addEventListener("click", function (event) {
+
+            if (!container.contains(event.target)) {
+
+                hideResults();
+
+            }
+
+        });
+
+        console.log(
+            "VIETNAM LOCATION SEARCH: READY"
+        );
+
+    }
+
+    if (document.readyState === "loading") {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            init
+        );
+
+    } else {
+
+        init();
+
+    }
+
+})();
+</script>
+
 </body>
 </html>
