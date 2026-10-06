@@ -1,0 +1,3625 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vietnam Vector Map - Style Editor</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f5f5f5;
+            color: #222;
+        }
+
+        .header {
+            height: 64px;
+            background: #ffffff;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            min-height: calc(100vh - 64px);
+        }
+
+        .sidebar {
+            background: #fff;
+            border-right: 1px solid #ddd;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .preview {
+            padding: 20px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #777;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: .5px;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .color-row label {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        input[type="color"] {
+            width: 42px;
+            height: 32px;
+            padding: 2px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .hex {
+            width: 92px;
+            height: 32px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 0 8px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .preset-buttons button {
+            background: #eee;
+        }
+
+        .primary {
+            width: 100%;
+            background: #2864f0;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .secondary {
+            width: 100%;
+            background: #eee;
+            margin-top: 8px;
+        }
+
+        .preview-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 3px 15px rgba(0,0,0,.08);
+        }
+
+        #preview {
+            height: calc(100vh - 150px);
+            min-height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #ddd;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #777;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 800px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                border-right: 0;
+                border-bottom: 1px solid #ddd;
+            }
+
+            #preview {
+                height: 500px;
+            }
+        }
+    </style>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css"
+    >
+
+    <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+
+<style id="vietnam-vector-poi-icon-editor-css">
+/* VIETNAM_VECTOR_POI_ICON_UI_V1 */
+
+.vietnam-poi-editor-icons {
+    margin: 12px 0;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fafafa;
+}
+
+.vietnam-poi-editor-icons-title {
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.vietnam-poi-editor-icons-search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    margin-bottom: 8px;
+}
+
+.vietnam-poi-editor-icons-status {
+    font-size: 11px;
+    color: #777;
+    margin-bottom: 8px;
+}
+
+.vietnam-poi-editor-icons-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.vietnam-poi-editor-icon {
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 7px;
+    padding: 5px 2px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.vietnam-poi-editor-icon:hover {
+    border-color: #777;
+}
+
+.vietnam-poi-editor-icon img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+.vietnam-poi-editor-icon span {
+    display: block;
+    font-size: 8px;
+    line-height: 10px;
+    word-break: break-word;
+}
+</style>
+
+
+<style>
+
+
+
+</style>
+
+
+
+
+<style id="vietnam-location-search-css">
+
+#vietnam-location-search {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 99999;
+    width: 380px;
+    font-family: Arial, sans-serif;
+}
+
+.vietnam-location-search-inner {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.28);
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,.08);
+}
+
+.vietnam-location-search-icon {
+    width: 44px;
+    min-width: 44px;
+    text-align: center;
+    font-size: 19px;
+    user-select: none;
+}
+
+#vietnam-location-search-input {
+    flex: 1;
+    min-width: 0;
+    height: 48px;
+    border: 0;
+    outline: 0;
+    padding: 0 4px;
+    font-size: 15px;
+    background: #fff;
+    color: #222;
+}
+
+#vietnam-location-search-input::placeholder {
+    color: #888;
+}
+
+#vietnam-location-search-clear {
+    width: 42px;
+    height: 48px;
+    border: 0;
+    background: #fff;
+    color: #777;
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+    display: none;
+}
+
+#vietnam-location-search-clear:hover {
+    background: #f2f2f2;
+    color: #222;
+}
+
+.vietnam-location-search-results {
+    display: none;
+    margin-top: 7px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.28);
+    overflow: hidden;
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.vietnam-location-search-result {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+}
+
+.vietnam-location-search-result:last-child {
+    border-bottom: 0;
+}
+
+.vietnam-location-search-result:hover,
+.vietnam-location-search-result.active {
+    background: #f3f6f8;
+}
+
+.vietnam-location-search-result-icon {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef3f6;
+    font-size: 17px;
+}
+
+.vietnam-location-search-result-content {
+    min-width: 0;
+}
+
+.vietnam-location-search-result-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #222;
+}
+
+.vietnam-location-search-result-detail {
+    margin-top: 3px;
+    font-size: 12px;
+    color: #777;
+}
+
+.vietnam-location-search-empty {
+    padding: 16px;
+    color: #777;
+    font-size: 14px;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+
+    #vietnam-location-search {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+    }
+
+}
+
+
+
+/* ============================================================
+   COLOR INPUT OUTLINE
+   ============================================================ */
+
+input[type="color"].color-outline-auto {
+    --color-outline: currentColor;
+
+    box-sizing: border-box;
+
+    width: 42px;
+    height: 32px;
+
+    padding: 2px;
+
+    border: 3px solid var(--color-outline) !important;
+    border-radius: 6px;
+
+    outline: 2px solid var(--color-outline) !important;
+    outline-offset: 2px;
+
+    box-shadow:
+        0 0 0 1px rgba(0,0,0,0.35),
+        0 0 0 4px rgba(255,255,255,0.95) !important;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.12s ease,
+        outline-color 0.12s ease,
+        box-shadow 0.12s ease,
+        transform 0.12s ease;
+}
+
+input[type="color"].color-outline-auto:hover {
+    transform: scale(1.03);
+}
+
+input[type="color"].color-outline-auto:focus {
+    outline: 3px solid var(--color-outline) !important;
+    outline-offset: 2px;
+
+    box-shadow:
+        0 0 0 2px rgba(255,255,255,0.95),
+        0 0 0 5px var(--color-outline) !important;
+}
+
+</style>
+
+
+<style id="VIETNAM_FIX_ZOOM_POI_OVERLAP_V1">
+/* VIETNAM_FIX_ZOOM_POI_OVERLAP_V1 */
+
+/* Giữ cụm Zoom của MapLibre luôn ở góc phải trên */
+.maplibregl-ctrl-top-right {
+    top: 8px !important;
+    right: 8px !important;
+    z-index: 2000 !important;
+}
+
+/* POI Icon Manager nằm bên dưới Zoom, không che Zoom */
+#vietnam-poi-editor-icons {
+    position: fixed !important;
+    top: 58px !important;
+    right: 8px !important;
+    z-index: 1500 !important;
+    max-height: calc(100vh - 180px) !important;
+    overflow: auto !important;
+}
+
+/* Hide all POI nằm tiếp dưới POI Icon Manager */
+#hide-all-poi-control {
+    position: fixed !important;
+    top: 120px !important;
+    right: 8px !important;
+    z-index: 1600 !important;
+}
+
+/* Màn hình nhỏ */
+@media (max-width: 600px) {
+    #vietnam-poi-editor-icons {
+        top: 58px !important;
+        right: 8px !important;
+        max-width: calc(100vw - 70px) !important;
+    }
+
+    #hide-all-poi-control {
+        top: 120px !important;
+        right: 8px !important;
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- VIETNAM LOCATION SEARCH CONTAINER -->
+<div id="vietnam-location-search">
+
+    <div class="vietnam-location-search-inner">
+
+        <div class="vietnam-location-search-icon">
+            🔍
+        </div>
+
+        <input
+            id="vietnam-location-search-input"
+            type="text"
+            autocomplete="off"
+            placeholder="Tìm địa điểm..."
+            aria-label="Tìm địa điểm"
+        />
+
+        <button
+            id="vietnam-location-search-clear"
+            type="button"
+            aria-label="Xóa tìm kiếm"
+        >×</button>
+
+    </div>
+
+    <div
+        id="vietnam-location-search-results"
+        class="vietnam-location-search-results"
+    ></div>
+
+</div>
+<!-- END VIETNAM LOCATION SEARCH CONTAINER -->
+
+
+<div id="location-search-results"></div>
+</div>
+
+
+
+<header class="header">
+    <h1>🇻🇳 Vietnam Vector Map — Style Editor</h1>
+
+    <button onclick="window.location.href='/'">
+        ← Map
+    </button>
+</header>
+
+<div class="container">
+
+    <aside class="sidebar">
+
+        <div class="section">
+            <div class="section-title">
+                Preset
+            </div>
+
+            <div class="preset-buttons">
+                <button onclick="applyPreset('beeline')">
+                    Beeline
+                </button>
+
+                <button onclick="applyPreset('light')">
+                    Light
+                </button>
+
+                <button onclick="applyPreset('dark')">
+                    Dark
+                </button>
+            </div>
+        </div>
+
+
+        <div class="section">
+
+            <div class="section-title">
+                Map
+            </div>
+
+            <div class="color-row">
+                <label>Background</label>
+                <input type="color" data-key="background">
+                <input class="hex" data-hex="background">
+            </div>
+
+            <div class="color-row">
+                <label>Water</label>
+                <input type="color" data-key="water">
+                <input class="hex" data-hex="water">
+            </div>
+
+            <div class="color-row">
+                <label>Water border</label>
+                <input type="color" data-key="waterLine">
+                <input class="hex" data-hex="waterLine">
+            </div>
+
+            <div class="color-row">
+                <label>Building</label>
+                <input type="color" data-key="building">
+                <input class="hex" data-hex="building">
+            </div>
+
+            <div class="color-row">
+                <label>Building border</label>
+                <input type="color" data-key="buildingOutline">
+                <input class="hex" data-hex="buildingOutline">
+            </div>
+
+        </div>
+
+
+        <div class="section">
+
+            <div class="section-title">
+                Roads
+            </div>
+
+            <div class="color-row">
+                <label>Minor road</label>
+                <input type="color" class="color-outline-auto" data-key="roadMinor">
+                <input class="hex" data-hex="roadMinor">
+            </div>
+            <div class="color-row color-row-outline">
+                <label>Minor road outline</label>
+                <input type="color" class="color-outline-auto" data-key="roadMinorOutline">
+                <input class="hex" data-hex="roadMinorOutline">
+            </div>
+
+            <div class="color-row">
+                <label>Residential</label>
+                <input type="color" class="color-outline-auto" data-key="roadResidential">
+                <input class="hex" data-hex="roadResidential">
+            </div>
+            <div class="color-row color-row-outline">
+                <label>Residential outline</label>
+                <input type="color" class="color-outline-auto" data-key="roadResidentialOutline">
+                <input class="hex" data-hex="roadResidentialOutline">
+            </div>
+
+            <div class="color-row">
+                <label>Secondary</label>
+                <input type="color" class="color-outline-auto" data-key="roadSecondary">
+                <input class="hex" data-hex="roadSecondary">
+            </div>
+            <div class="color-row color-row-outline">
+                <label>Secondary outline</label>
+                <input type="color" class="color-outline-auto" data-key="roadSecondaryOutline">
+                <input class="hex" data-hex="roadSecondaryOutline">
+            </div>
+
+            <div class="color-row">
+                <label>Primary</label>
+                <input type="color" class="color-outline-auto" data-key="roadPrimary">
+                <input class="hex" data-hex="roadPrimary">
+            </div>
+            <div class="color-row color-row-outline">
+                <label>Primary outline</label>
+                <input type="color" class="color-outline-auto" data-key="roadPrimaryOutline">
+                <input class="hex" data-hex="roadPrimaryOutline">
+            </div>
+
+            <div class="color-row">
+                <label>Motorway</label>
+                <input type="color" class="color-outline-auto" data-key="roadMotorway">
+                <input class="hex" data-hex="roadMotorway">
+            </div>
+            <div class="color-row color-row-outline">
+                <label>Motorway outline</label>
+                <input type="color" class="color-outline-auto" data-key="roadMotorwayOutline">
+                <input class="hex" data-hex="roadMotorwayOutline">
+            </div>
+
+        </div>
+
+
+        <div class="section">
+
+            <div class="section-title">
+                Bridge
+            </div>
+
+            <div class="color-row">
+                <label>Bridge</label>
+                <input type="color" data-key="bridge">
+                <input class="hex" data-hex="bridge">
+            </div>
+
+            <div class="color-row">
+                <label>Bridge border</label>
+                <input type="color" data-key="bridgeOutline">
+                <input class="hex" data-hex="bridgeOutline">
+            </div>
+
+        </div>
+
+
+        <div class="section">
+
+            <div class="section-title">
+                Text
+            </div>
+
+            <div class="color-row">
+                <label>Main text</label>
+                <input type="color" data-key="text">
+                <input class="hex" data-hex="text">
+            </div>
+
+            <div class="color-row">
+                <label>Secondary text</label>
+                <input type="color" data-key="textSecondary">
+                <input class="hex" data-hex="textSecondary">
+            </div>
+
+            <div class="color-row">
+                <label>Text halo</label>
+                <input type="color" data-key="textHalo">
+                <input class="hex" data-hex="textHalo">
+            </div>
+
+        </div>
+
+
+        <div class="section">
+
+            <div class="section-title">
+                Navigation
+            </div>
+
+            <div class="color-row">
+                <label>Route</label>
+                <input type="color" data-key="route">
+                <input class="hex" data-hex="route">
+            </div>
+
+            <div class="color-row">
+                <label>Route outline</label>
+                <input type="color" data-key="routeOutline">
+                <input class="hex" data-hex="routeOutline">
+            </div>
+
+            <div class="color-row">
+                <label>Marker</label>
+                <input type="color" data-key="marker">
+                <input class="hex" data-hex="marker">
+            </div>
+
+        </div>
+
+
+        <button class="primary" onclick="saveTheme()">
+            💾 Lưu màu
+        </button>
+
+        <button class="secondary" onclick="resetTheme()">
+            ↻ Reset
+        </button>
+
+        <button class="secondary" onclick="exportTheme()">
+            ↓ Export JSON
+        </button>
+
+        <div class="status" id="status">
+            Chưa có thay đổi
+        </div>
+
+    </aside>
+
+
+    <main class="preview">
+
+        <div class="preview-card">
+
+            <div id="preview"></div>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+
+const API = window.location.origin;
+
+const DEFAULT_THEME = {
+
+    background: "#F7F6F2",
+
+    water: "#DCEFF0",
+    waterLine: "#B9DDE0",
+
+    building: "#E8E6E1",
+    buildingOutline: "#D5D2CB",
+
+    roadMinor: "#FFFFFF",
+    roadResidential: "#FFFFFF",
+    roadSecondary: "#FFFDF8",
+    roadPrimary: "#FFF4C7",
+    roadMotorway: "#FFE29A",
+
+    bridge: "#FFFFFF",
+    bridgeOutline: "#8F8B83",
+
+    text: "#30302E",
+    textSecondary: "#73716C",
+    textHalo: "#FFFFFF",
+
+    route: "#2864F0",
+    routeOutline: "#FFFFFF",
+
+    marker: "#2864F0",
+
+    roadMinorOutline: "#D8D8D8",
+    roadResidentialOutline: "#D8D8D8",
+    roadSecondaryOutline: "#D0CEC7",
+    roadPrimaryOutline: "#D5C98F",
+    roadMotorwayOutline: "#C7AA62",
+};
+
+
+const PRESETS = {
+
+    beeline: {
+        ...DEFAULT_THEME
+    },
+
+    light: {
+        background: "#F8F9FA",
+
+        water: "#D9EEF7",
+        waterLine: "#A8D6E8",
+
+        building: "#E5E5E5",
+        buildingOutline: "#CCCCCC",
+
+        roadMinor: "#FFFFFF",
+        roadResidential: "#FFFFFF",
+        roadSecondary: "#FFFDF5",
+        roadPrimary: "#FFE9A8",
+        roadMotorway: "#FFD36A",
+
+        bridge: "#FFFFFF",
+        bridgeOutline: "#777777",
+
+        text: "#333333",
+        textSecondary: "#666666",
+        textHalo: "#FFFFFF",
+
+        route: "#2864F0",
+        routeOutline: "#FFFFFF",
+
+        marker: "#2864F0"
+    },
+
+    dark: {
+        background: "#181818",
+
+        water: "#203A40",
+        waterLine: "#315B63",
+
+        building: "#292929",
+        buildingOutline: "#3A3A3A",
+
+        roadMinor: "#303030",
+        roadResidential: "#383838",
+        roadSecondary: "#454545",
+        roadPrimary: "#635322",
+        roadMotorway: "#795B20",
+
+        bridge: "#454545",
+        bridgeOutline: "#999999",
+
+        text: "#F5F5F5",
+        textSecondary: "#B5B5B5",
+        textHalo: "#181818",
+
+        route: "#4D8DFF",
+        routeOutline: "#181818",
+
+        marker: "#4D8DFF"
+    }
+
+};
+
+
+let theme = loadTheme();
+
+
+function loadTheme() {
+
+    try {
+
+        const saved =
+            localStorage.getItem("vietnam-map-theme");
+
+        if (saved) {
+
+            return {
+                ...DEFAULT_THEME,
+                ...JSON.parse(saved)
+            };
+
+        }
+
+    } catch (e) {
+
+        console.error(e);
+
+    }
+
+    return {
+        ...DEFAULT_THEME
+    };
+
+}
+
+
+function syncInputs() {
+
+    document
+        .querySelectorAll("[data-key]")
+        .forEach(input => {
+
+            const key = input.dataset.key;
+
+            input.value =
+                theme[key] || "#ffffff";
+
+        });
+
+
+    document
+        .querySelectorAll("[data-hex]")
+        .forEach(input => {
+
+            const key = input.dataset.hex;
+
+            input.value =
+                theme[key] || "#ffffff";
+
+        });
+
+}
+
+
+function updateTheme(key, value) {
+
+    if (!/^#[0-9A-Fa-f]{6}$/.test(value)) {
+
+        return;
+
+    }
+
+    theme[key] = value;
+
+    syncInputs();
+
+    updateMap();
+
+    document.getElementById("status").innerText =
+        "Đã thay đổi — chưa lưu";
+
+}
+
+
+document
+    .querySelectorAll("[data-key]")
+    .forEach(input => {
+
+        input.addEventListener("input", () => {
+
+            updateTheme(
+                input.dataset.key,
+                input.value
+            );
+
+        });
+
+    });
+
+
+document
+    .querySelectorAll("[data-hex]")
+    .forEach(input => {
+
+        input.addEventListener("change", () => {
+
+            updateTheme(
+                input.dataset.hex,
+                input.value
+            );
+
+        });
+
+    });
+
+
+function applyPreset(name) {
+
+    theme = {
+        ...DEFAULT_THEME,
+        ...PRESETS[name]
+    };
+
+    syncInputs();
+
+    updateMap();
+
+    document.getElementById("status").innerText =
+        "Preset " + name + " đã được áp dụng";
+
+}
+
+
+function saveTheme() {
+
+    localStorage.setItem(
+        "vietnam-map-theme",
+        JSON.stringify(theme)
+    );
+
+    document.getElementById("status").innerText =
+        "✓ Đã lưu theme";
+
+}
+
+
+function resetTheme() {
+
+    localStorage.removeItem(
+        "vietnam-map-theme"
+    );
+
+    theme = {
+        ...DEFAULT_THEME
+    };
+
+    syncInputs();
+
+    updateMap();
+
+    document.getElementById("status").innerText =
+        "Đã reset";
+
+}
+
+
+function exportTheme() {
+
+    const blob = new Blob(
+        [
+            JSON.stringify(theme, null, 2)
+        ],
+        {
+            type: "application/json"
+        }
+    );
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const a =
+        document.createElement("a");
+
+    a.href = url;
+
+    a.download =
+        "vietnam-map-theme.json";
+
+    a.click();
+
+    URL.revokeObjectURL(url);
+
+}
+
+
+const map = window.__styleEditorMap = new maplibregl.Map({
+
+    container: "preview",
+
+    center: [106.6297, 10.8231],
+
+    zoom: 10,
+
+    minZoom: 4,
+
+    maxZoom: 22,
+
+    attributionControl: true,
+
+    style: {
+
+        version: 8,
+
+        glyphs:
+            "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+
+        sources: {
+
+            highway: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/highway/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 4,
+                maxzoom: 22
+
+            },
+
+            building: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/building/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 12,
+                maxzoom: 16
+
+            },
+
+            water: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/water/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 5,
+                maxzoom: 14
+
+            },
+
+            place: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/place/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 4,
+                maxzoom: 14
+
+            },
+
+            bridge: {
+
+                type: "vector",
+
+                tiles: [
+                    API +
+                    "/api/tiles/bridge/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 8,
+                maxzoom: 16
+
+            }
+
+        },
+
+            poi: {
+                type: "vector",
+                tiles: [
+                    API +
+                    "/api/tiles/poi/{z}/{x}/{y}.pbf"
+                ],
+                minzoom: 11,
+                maxzoom: 20
+            },
+
+        layers: [
+            {
+                id: "background",
+                type: "background",
+
+                paint: {
+                    "background-color":
+                        theme.background
+                }
+            },
+
+
+            {
+                id: "water-fill",
+                type: "fill",
+
+                source: "water",
+                "source-layer": "water",
+
+                paint: {
+
+                    "fill-color":
+                        theme.water,
+
+                    "fill-opacity": .9
+
+                }
+
+            },
+
+
+            {
+                id: "water-line",
+                type: "line",
+
+                source: "water",
+                "source-layer": "water",
+
+                paint: {
+
+                    "line-color":
+                        theme.waterLine,
+
+                    "line-width": 1
+
+                }
+
+            },
+
+
+            {
+                id: "building-fill",
+
+                type: "fill",
+
+                source: "building",
+                "source-layer": "building",
+
+                paint: {
+
+                    "fill-color":
+                        theme.building,
+
+                    "fill-opacity": .7
+
+                }
+
+            },
+
+
+            {
+                id: "building-outline",
+
+                type: "line",
+
+                source: "building",
+                "source-layer": "building",
+
+                paint: {
+
+                    "line-color":
+                        theme.buildingOutline,
+
+                    "line-width": .6
+
+                }
+
+            },
+
+
+            {
+                id: "road-motorway-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                filter: ["in", ["get", "highway"], ["literal", ["motorway", "trunk"]]],
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                paint: {
+                    "line-color": theme.roadMotorwayOutline,
+                    "line-width": [
+    "interpolate", ["linear"], ["zoom"],
+                        4, 2.00,
+                        8, 2.40,
+                        10, 3.00,
+                        12, 3.80,
+                        14, 4.80,
+                        16, 6.20,
+                        18, 8.00,
+                        20, 10.00,
+                        22, 12.00
+                    ]
+                }
+            },
+
+            {
+                id: "road-primary-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                filter: ["==", ["get", "highway"], "primary"],
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                paint: {
+                    "line-color": theme.roadPrimaryOutline,
+                    "line-width": [
+    "interpolate", ["linear"], ["zoom"],
+                        4, 1.70,
+                        8, 2.00,
+                        10, 2.60,
+                        12, 3.20,
+                        14, 4.10,
+                        16, 5.20,
+                        18, 6.80,
+                        20, 8.00,
+                        22, 9.50
+                    ]
+                }
+            },
+
+            {
+                id: "road-secondary-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                filter: ["in", ["get", "highway"], ["literal", ["secondary", "tertiary"]]],
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                paint: {
+                    "line-color": theme.roadSecondaryOutline,
+                    "line-width": [
+    "interpolate", ["linear"], ["zoom"],
+                        4, 1.85,
+                        8, 2.20,
+                        10, 2.50,
+                        12, 3.00,
+                        14, 3.70,
+                        16, 4.70,
+                        18, 6.00,
+                        20, 7.50,
+                        22, 9.50
+                    ]
+                }
+            },
+
+            {
+                id: "road-residential-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                filter: ["==", ["get", "highway"], "residential"],
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                paint: {
+                    "line-color": theme.roadResidentialOutline,
+                    "line-width": [
+    "interpolate", ["linear"], ["zoom"],
+                        4, 1.55,
+                        8, 1.90,
+                        10, 2.20,
+                        12, 2.70,
+                        14, 3.40,
+                        16, 4.40,
+                        18, 5.70,
+                        20, 7.20,
+                        22, 9.20
+                    ]
+                }
+            },
+
+            {
+                id: "road-minor-outline",
+                type: "line",
+                source: "highway",
+                "source-layer": "highway",
+                filter: ["!", ["in", ["get", "highway"], ["literal", ["motorway", "trunk", "primary", "secondary", "tertiary", "residential"]]]],
+                layout: {
+                    "line-cap": "round",
+                    "line-join": "round"
+                },
+                paint: {
+                    "line-color": theme.roadMinorOutline,
+                    "line-width": [
+    "interpolate", ["linear"], ["zoom"],
+                        4, 1.35,
+                        8, 1.70,
+                        10, 2.00,
+                        12, 2.50,
+                        14, 3.20,
+                        16, 4.20,
+                        18, 5.50,
+                        20, 7.00,
+                        22, 9.00
+                    ]
+                }
+            },
+
+            {
+                id: "road",
+
+                type: "line",
+
+                source: "highway",
+                "source-layer": "highway",
+
+                layout: {
+
+                    "line-cap": "round",
+                    "line-join": "round"
+
+                },
+
+                paint: {
+
+                    "line-color": [
+
+                        "match",
+
+                        ["get", "highway"],
+
+                        "motorway",
+                        theme.roadMotorway,
+
+                        "trunk",
+                        theme.roadMotorway,
+
+                        "primary",
+                        theme.roadPrimary,
+
+                        "secondary",
+                        theme.roadSecondary,
+
+                        "tertiary",
+                        theme.roadSecondary,
+
+                        "residential",
+                        theme.roadResidential,
+
+                        "service",
+                        theme.roadMinor,
+
+                        theme.roadMinor
+
+                    ],
+
+                    "line-width": [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    4, 0.35,
+    8, 0.70,
+    10, 1.00,
+    12, 1.50,
+    14, 2.20,
+    16, 3.20,
+    18, 4.50,
+    20, 6.00,
+    22, 8.00
+]
+
+                }
+
+            },
+
+
+            {
+                id: "bridge",
+
+                type: "line",
+
+                source: "bridge",
+                "source-layer": "bridge",
+
+                paint: {
+
+                    "line-color":
+                        theme.bridgeOutline,
+
+                    "line-width": [
+
+                        "interpolate",
+
+                        ["linear"],
+                        ["zoom"],
+
+                        9, 2,
+                        14, 5,
+                        18, 10
+
+                    ]
+
+                }
+
+            },
+
+
+            {
+                id: "place-label",
+
+                type: "symbol",
+
+                source: "place",
+                "source-layer": "place",
+
+                minzoom: 5,
+
+                layout: {
+
+                    "text-field": [
+                        "coalesce",
+                        ["get", "name"],
+                        ""
+                    ],
+
+                    "text-font": [
+                        "Noto Sans Bold"
+                    ],
+
+                    "text-size": [
+
+                        "interpolate",
+
+                        ["linear"],
+                        ["zoom"],
+
+                        5, 10,
+                        8, 13,
+                        12, 16
+
+                    ]
+
+                },
+
+                paint: {
+
+                    "text-color":
+                        theme.text,
+
+                    "text-halo-color":
+                        theme.textHalo,
+
+                    "text-halo-width": 1.5
+
+                }
+
+            },
+
+
+            {
+                id: "road-label",
+
+                type: "symbol",
+
+                source: "highway",
+                "source-layer": "highway",
+
+                minzoom: 10,
+
+                filter: [
+                    "all",
+                    ["any", ["has", "name"], ["has", "name_vi"], ["has", "name_en"], ["has", "brand"]]
+                ],
+
+                layout: {
+
+                    "symbol-placement": "line",
+
+                    "text-field":
+                        ["get", "name"],
+
+                    "text-font": [
+                        "Noto Sans Regular"
+                    ],
+
+                    "text-size": 10,
+
+                    "text-padding": 4
+
+                },
+
+                paint: {
+
+                    "text-color":
+                        theme.textSecondary,
+
+                    "text-halo-color":
+                        theme.textHalo,
+
+                    "text-halo-width": 1.2
+
+                }
+
+            }
+
+        ]
+
+    }
+
+});
+
+
+function updateMap() {
+
+    if (!map.isStyleLoaded()) {
+        return;
+    }
+
+    const changes = {
+
+        "background":
+            ["background-color", theme.background],
+
+        "water-fill":
+            ["fill-color", theme.water],
+
+        "water-line":
+            ["line-color", theme.waterLine],
+
+        "building-fill":
+            ["fill-color", theme.building],
+
+        "building-outline":
+            ["line-color", theme.buildingOutline],
+
+        "bridge":
+            ["line-color", theme.bridgeOutline],
+
+        "place-label":
+            ["text-color", theme.text],
+
+        "road-label":
+            ["text-color", theme.textSecondary]
+
+    };
+
+
+    Object.entries(changes)
+        .forEach(([layer, [property, value]]) => {
+
+            try {
+
+                map.setPaintProperty(
+                    layer,
+                    property,
+                    value
+                );
+
+            } catch (e) {
+
+                console.warn(
+                    "Cannot update",
+                    layer,
+                    e
+                );
+
+            }
+
+        });
+
+
+    try {
+
+        map.setPaintProperty(
+            "road",
+            "line-color",
+            [
+                "match",
+
+                ["get", "highway"],
+
+                "motorway",
+                theme.roadMotorway,
+
+                "trunk",
+                theme.roadMotorway,
+
+                "primary",
+                theme.roadPrimary,
+
+                "secondary",
+                theme.roadSecondary,
+
+                "tertiary",
+                theme.roadSecondary,
+
+                "residential",
+                theme.roadResidential,
+
+                "service",
+                theme.roadMinor,
+
+                theme.roadMinor
+            ]
+        );
+
+    } catch (e) {
+
+        console.warn(e);
+
+    }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ROUTE COLORS
+        |--------------------------------------------------------------------------
+        */
+
+        try {
+
+            if (map.getLayer("route-outline")) {
+
+                map.setPaintProperty(
+                    "route-outline",
+                    "line-color",
+                    theme.routeOutline
+                );
+
+            }
+
+        } catch (e) {
+
+            console.warn(
+                "Cannot update route-outline",
+                e
+            );
+
+        }
+
+        try {
+
+            if (map.getLayer("route")) {
+
+                map.setPaintProperty(
+                    "route",
+                    "line-color",
+                    theme.route
+                );
+
+            }
+
+        } catch (e) {
+
+            console.warn(
+                "Cannot update route",
+                e
+            );
+
+        }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ROAD OUTLINE COLORS
+    |--------------------------------------------------------------------------
+    | Update the actual outline layers.
+    |
+    | These are separate MapLibre layers from "road".
+    |--------------------------------------------------------------------------
+    */
+
+    const roadOutlineColors = {
+        "road-motorway-outline": theme.roadMotorwayOutline,
+        "road-primary-outline": theme.roadPrimaryOutline,
+        "road-secondary-outline": theme.roadSecondaryOutline,
+        "road-residential-outline": theme.roadResidentialOutline,
+        "road-minor-outline": theme.roadMinorOutline
+    };
+
+    /*
+     * CAP NHAT MAU OUTLINE
+     *
+     * QUAN TRONG:
+     * outline la layer rieng nam ben duoi layer "road".
+     *
+     * Khi user doi mau outline, phai cap nhat
+     * line-color truc tiep tren layer MapLibre.
+     *
+     * KHONG set line-width tai day.
+     * line-width phai giu expression theo zoom
+     * da khai bao trong layer definition.
+     */
+
+    Object.entries(roadOutlineColors).forEach(
+        ([layerId, color]) => {
+            try {
+                if (!map.getLayer(layerId)) {
+                    console.warn(
+                        "Khong tim thay outline layer:",
+                        layerId
+                    );
+                    return;
+                }
+
+                map.setPaintProperty(
+                    layerId,
+                    "line-color",
+                    color
+                );
+
+            } catch (e) {
+                console.error(
+                    "Khong the cap nhat mau outline:",
+                    layerId,
+                    color,
+                    e
+                );
+            }
+        }
+    );
+
+}
+
+
+
+/*
+|--------------------------------------------------------------------------
+| VIETNAM_VECTOR_POI_RENDER_V1
+|--------------------------------------------------------------------------
+| POI icon rendering for Style Editor
+|--------------------------------------------------------------------------
+*/
+
+(function () {
+
+    const POI_ICON_MAP = {
+        football: "soccer",
+        soccer: "soccer",
+        tennis: "tennis",
+        table_tennis: "table_tennis",
+        badminton: "badminton",
+        archery: "archery",
+        running: "running",
+        swimming: "swimming",
+        swimming_pool: "swimming_pool",
+        karting: "karting",
+        chess: "chess",
+        pitch: "pitch",
+        stadium: "stadium",
+        sports_centre: "sports_centre",
+        sports_center: "sports_centre",
+        cricket: "cricket",
+        sport: "sports",
+        sports: "sports",
+
+        restaurant: "restaurant",
+        cafe: "cafe",
+        fast_food: "fast_food",
+        bar: "bar",
+        pub: "pub",
+        hotel: "hotel",
+        guest_house: "guest_house",
+        hostel: "hostel",
+        motel: "hotel",
+
+        fuel: "fuel",
+        parking: "parking",
+        atm: "atm",
+        bank: "bank",
+        pharmacy: "pharmacy",
+        hospital: "hospital",
+        clinic: "clinic",
+        doctors: "doctors",
+        dentist: "dentist",
+
+        school: "school",
+        kindergarten: "kindergarten",
+        university: "university",
+        college: "university",
+        library: "library",
+
+        supermarket: "supermarket",
+        department_store: "department_store",
+        mall: "mall",
+        marketplace: "marketplace",
+
+        police: "police",
+        fire_station: "fire_station",
+        government: "government",
+        courthouse: "courthouse",
+        townhall: "townhall",
+
+        museum: "museum",
+        cinema: "cinema",
+        theatre: "theatre",
+        monument: "monument",
+        castle: "castle",
+
+        station: "station",
+        bus_station: "bus_station",
+        ferry_terminal: "ferry_terminal",
+        airport: "airport",
+
+        park: "park",
+        zoo: "zoo",
+        aquarium: "aquarium",
+        theme_park: "theme_park",
+        marina: "marina",
+        viewpoint: "viewpoint",
+
+        place_of_worship: "place_of_worship",
+        post_office: "post_office",
+        veterinary: "veterinary",
+        nursing_home: "nursing_home",
+
+        poi_default: "poi_default"
+    };
+
+
+    function addPOIRenderLayer() {
+
+        if (!map.getSource("poi")) {
+
+            map.addSource("poi", {
+
+                type: "vector",
+
+                tiles: [
+                    location.origin +
+                    "/api/tiles/poi/{z}/{x}/{y}.pbf"
+                ],
+
+                minzoom: 0,
+                maxzoom: 20
+
+            });
+
+        }
+
+
+        if (!map.getLayer("poi-icons")) {
+
+            map.addLayer({
+
+                id: "poi-icons",
+
+                type: "symbol",
+
+                source: "poi",
+
+                "source-layer": "poi",
+
+                minzoom: 11,
+
+                layout: {
+
+                    "icon-image": [
+                        "concat",
+                        "poi-icon-",
+                        [
+                            "match",
+                            [
+                                "coalesce",
+                                ["get", "subclass"],
+                                ["get", "amenity"],
+                                ["get", "shop"],
+                                ["get", "tourism"],
+                                ["get", "leisure"],
+                                ""
+                            ],
+
+                            "sport", "sports",
+                            "sports", "sports",
+                            "cricket", "cricket",
+                            "soccer", "soccer",
+                            "football", "soccer",
+                            "tennis", "tennis",
+                            "pitch", "pitch",
+                            "sports_centre", "sports_centre",
+                            "sports_center", "sports_centre",
+                            "stadium", "stadium",
+
+                            "restaurant", "restaurant",
+                            "cafe", "cafe",
+                            "fast_food", "fast_food",
+                            "bar", "bar",
+                            "hotel", "hotel",
+                            "guest_house", "guest_house",
+                            "hostel", "hostel",
+                            "fuel", "fuel",
+                            "parking", "parking",
+                            "atm", "atm",
+                            "bank", "bank",
+                            "pharmacy", "pharmacy",
+                            "hospital", "hospital",
+                            "clinic", "clinic",
+                            "doctors", "doctors",
+                            "dentist", "dentist",
+                            "school", "school",
+                            "kindergarten", "kindergarten",
+                            "college", "college",
+                            "university", "university",
+                            "police", "police",
+                            "fire_station", "fire_station",
+                            "supermarket", "supermarket",
+                            "marketplace", "marketplace",
+                            "station", "station",
+                            "bus_stop", "bus_stop",
+                            "bus_station", "bus_station",
+                            "post_office", "post_office",
+                            "museum", "museum",
+                            "cinema", "cinema",
+                            "theatre", "theatre",
+                            "park", "park",
+                            "playground", "playground",
+                            "place_of_worship", "place_of_worship",
+
+                            "poi_default"
+                        ]
+                    ],
+
+                    "icon-size": 0.7,
+
+                    "icon-allow-overlap": true,
+
+                    "icon-ignore-placement": false
+
+                }
+
+            });
+
+        }
+
+    }
+
+
+    if (typeof map !== "undefined") {
+
+        if (map.isStyleLoaded()) {
+
+            addPOIRenderLayer();
+
+        } else {
+
+            map.once(
+                "load",
+                addPOIRenderLayer
+            );
+
+        }
+
+    }
+
+})();
+
+
+map.on("load", () => {
+
+    syncInputs();
+
+    updateMap();
+
+});
+
+
+</script>
+
+
+<script id="vietnam-vector-poi-editor-js">
+/* VIETNAM_VECTOR_POI_ICON_UI_V1 */
+
+(function () {
+
+    "use strict";
+
+    async function loadPOIIcons() {
+
+        const container =
+            document.getElementById(
+                "vietnam-poi-editor-icons"
+            );
+
+        if (!container) return;
+
+        const status =
+            container.querySelector(
+                ".vietnam-poi-editor-icons-status"
+            );
+
+        const grid =
+            container.querySelector(
+                ".vietnam-poi-editor-icons-grid"
+            );
+
+        const search =
+            container.querySelector(
+                ".vietnam-poi-editor-icons-search"
+            );
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/icons",
+                    { cache: "no-store" }
+                );
+
+            if (!response.ok) {
+                throw new Error(
+                    "HTTP " + response.status
+                );
+            }
+
+            const data =
+                await response.json();
+
+            let icons =
+                Array.from(
+                    new Set(
+                        Object.values(
+                            data.icons || {}
+                        )
+                    )
+                )
+                .filter(Boolean)
+                .sort();
+
+            status.textContent =
+                "Loaded " +
+                icons.length +
+                " icons";
+
+            function draw(list) {
+
+                grid.innerHTML = "";
+
+                list.forEach(function (name) {
+
+                    const button =
+                        document.createElement(
+                            "button"
+                        );
+
+                    button.type = "button";
+                    button.className =
+                        "vietnam-poi-editor-icon";
+
+                    button.innerHTML = `
+                        <img
+                            src="/icons/${encodeURIComponent(name)}.svg"
+                            alt="${name}"
+                        >
+                        <span>${name}</span>
+                    `;
+
+                    button.onclick = function () {
+
+                        window.dispatchEvent(
+                            new CustomEvent(
+                                "vietnam-poi-icon-selected",
+                                {
+                                    detail: {
+                                        icon: name,
+                                        url:
+                                            "/icons/" +
+                                            name +
+                                            ".svg"
+                                    }
+                                }
+                            )
+                        );
+
+                        console.log(
+                            "[Vietnam Vector] editor icon:",
+                            name
+                        );
+                    };
+
+                    grid.appendChild(button);
+                });
+            }
+
+            draw(icons);
+
+            search.addEventListener(
+                "input",
+                function () {
+
+                    const q =
+                        this.value
+                            .trim()
+                            .toLowerCase();
+
+                    draw(
+                        q
+                            ? icons.filter(
+                                x =>
+                                    x.toLowerCase()
+                                     .includes(q)
+                              )
+                            : icons
+                    );
+                }
+            );
+
+        } catch (error) {
+
+            status.textContent =
+                "Icon API error: " +
+                error.message;
+        }
+    }
+
+    function init() {
+
+        if (
+            document.getElementById(
+                "vietnam-poi-editor-icons"
+            )
+        ) {
+            return;
+        }
+
+        const box =
+            document.createElement("div");
+
+        box.id =
+            "vietnam-poi-editor-icons";
+
+        box.className =
+            "vietnam-poi-editor-icons";
+
+        box.innerHTML = `
+            <div class="vietnam-poi-editor-icons-title">
+                POI Icons
+            </div>
+
+            <div
+                class="vietnam-poi-editor-icons-status"
+            >
+                Loading...
+            </div>
+
+            <input
+                class="vietnam-poi-editor-icons-search"
+                placeholder="Search POI icon..."
+            >
+
+            <div
+                class="vietnam-poi-editor-icons-grid"
+            ></div>
+        `;
+
+        document.body.appendChild(box);
+
+        loadPOIIcons();
+    }
+
+    window.VietnamVectorStyleEditorIcons = {
+        init: init
+    };
+
+    if (
+        document.readyState === "loading"
+    ) {
+        document.addEventListener(
+            "DOMContentLoaded",
+            init
+        );
+    } else {
+        init();
+    }
+
+})();
+</script>
+
+
+
+<script id="vietnam-location-search-js">
+(function () {
+
+    "use strict";
+
+    /*
+     * ==========================================================
+     * VIETNAM LOCATION SEARCH
+     * ==========================================================
+     */
+
+    const locations = [
+
+        {
+            name: "Hồ Chí Minh",
+            aliases: [
+                "ho chi minh",
+                "ho chi minh city",
+                "tphcm",
+                "tp hcm",
+                "tp. hcm",
+                "tp ho chi minh",
+                "thanh pho ho chi minh",
+                "sai gon",
+                "saigon"
+            ],
+            detail: "Thành phố Hồ Chí Minh",
+            center: [106.6297, 10.8231],
+            zoom: 11,
+            icon: "📍"
+        },
+
+        {
+            name: "Hà Nội",
+            aliases: [
+                "ha noi",
+                "hanoi",
+                "thu do ha noi"
+            ],
+            detail: "Thủ đô Hà Nội",
+            center: [105.8342, 21.0278],
+            zoom: 11,
+            icon: "📍"
+        },
+
+        {
+            name: "Đà Nẵng",
+            aliases: [
+                "da nang",
+                "danang",
+                "tp da nang",
+                "thanh pho da nang"
+            ],
+            detail: "Thành phố Đà Nẵng",
+            center: [108.2022, 16.0544],
+            zoom: 12,
+            icon: "📍"
+        },
+
+        {
+            name: "Hải Phòng",
+            aliases: [
+                "hai phong",
+                "haiphong",
+                "tp hai phong"
+            ],
+            detail: "Thành phố Hải Phòng",
+            center: [106.6881, 20.8449],
+            zoom: 11,
+            icon: "📍"
+        },
+
+        {
+            name: "Cần Thơ",
+            aliases: [
+                "can tho",
+                "cantho",
+                "tp can tho"
+            ],
+            detail: "Thành phố Cần Thơ",
+            center: [105.7469, 10.0452],
+            zoom: 11,
+            icon: "📍"
+        }
+
+    ];
+
+    function normalize(value) {
+
+        return String(value || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/đ/g, "d")
+            .replace(/[^a-z0-9\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+    }
+
+    function init() {
+
+        const input =
+            document.getElementById(
+                "vietnam-location-search-input"
+            );
+
+        const clearButton =
+            document.getElementById(
+                "vietnam-location-search-clear"
+            );
+
+        const results =
+            document.getElementById(
+                "vietnam-location-search-results"
+            );
+
+        const container =
+            document.getElementById(
+                "vietnam-location-search"
+            );
+
+        if (!input || !clearButton || !results || !container) {
+
+            console.error(
+                "VIETNAM LOCATION SEARCH: DOM NOT FOUND"
+            );
+
+            return;
+
+        }
+
+        let activeIndex = -1;
+
+        function hideResults() {
+
+            results.innerHTML = "";
+            results.style.display = "none";
+            activeIndex = -1;
+
+        }
+
+        function showResults() {
+
+            const query = normalize(input.value);
+
+            results.innerHTML = "";
+            activeIndex = -1;
+
+            if (!query) {
+
+                hideResults();
+                return;
+
+            }
+
+            const matches = locations.filter(function (item) {
+
+                const values = [
+                    item.name,
+                    item.detail,
+                    ...(item.aliases || [])
+                ];
+
+                return values.some(function (value) {
+
+                    return normalize(value).includes(query);
+
+                });
+
+            });
+
+            if (!matches.length) {
+
+                const empty =
+                    document.createElement("div");
+
+                empty.className =
+                    "vietnam-location-search-empty";
+
+                empty.textContent =
+                    "Không tìm thấy địa điểm";
+
+                results.appendChild(empty);
+
+                results.style.display = "block";
+
+                return;
+
+            }
+
+            matches.forEach(function (item, index) {
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "vietnam-location-search-result";
+
+                row.dataset.index = String(index);
+
+                row.innerHTML =
+
+                    '<div class="vietnam-location-search-result-icon">' +
+                        item.icon +
+                    '</div>' +
+
+                    '<div class="vietnam-location-search-result-content">' +
+
+                        '<div class="vietnam-location-search-result-name">' +
+                            item.name +
+                        '</div>' +
+
+                        '<div class="vietnam-location-search-result-detail">' +
+                            item.detail +
+                        '</div>' +
+
+                    '</div>';
+
+                row.addEventListener("mousedown", function (event) {
+
+                    event.preventDefault();
+
+                });
+
+                row.addEventListener("click", function () {
+
+                    selectLocation(item);
+
+                });
+
+                results.appendChild(row);
+
+            });
+
+            results.style.display = "block";
+
+        }
+
+        function selectLocation(item) {
+
+            if (
+                typeof map === "undefined" ||
+                !map ||
+                typeof map.flyTo !== "function"
+            ) {
+
+                console.error(
+                    "VIETNAM LOCATION SEARCH: map is not available"
+                );
+
+                return;
+
+            }
+
+            map.flyTo({
+
+                center: item.center,
+
+                zoom: item.zoom,
+
+                speed: 1.2,
+
+                curve: 1.4,
+
+                essential: true
+
+            });
+
+            input.value = item.name;
+
+            clearButton.style.display = "block";
+
+            hideResults();
+
+            if (typeof updateStatus === "function") {
+
+                try {
+
+                    updateStatus(
+                        "Đã chọn: " + item.name
+                    );
+
+                } catch (e) {}
+
+            }
+
+            console.log(
+                "LOCATION SEARCH: selected",
+                item.name,
+                item.center
+            );
+
+        }
+
+        function moveActive(direction) {
+
+            const rows =
+                Array.from(
+                    results.querySelectorAll(
+                        ".vietnam-location-search-result"
+                    )
+                );
+
+            if (!rows.length) {
+                return;
+            }
+
+            activeIndex += direction;
+
+            if (activeIndex < 0) {
+                activeIndex = rows.length - 1;
+            }
+
+            if (activeIndex >= rows.length) {
+                activeIndex = 0;
+            }
+
+            rows.forEach(function (row, index) {
+
+                row.classList.toggle(
+                    "active",
+                    index === activeIndex
+                );
+
+            });
+
+        }
+
+        input.addEventListener("input", function () {
+
+            clearButton.style.display =
+                input.value.trim()
+                    ? "block"
+                    : "none";
+
+            showResults();
+
+        });
+
+        input.addEventListener("focus", function () {
+
+            if (input.value.trim()) {
+
+                showResults();
+
+            }
+
+        });
+
+        input.addEventListener("keydown", function (event) {
+
+            if (event.key === "ArrowDown") {
+
+                event.preventDefault();
+
+                moveActive(1);
+
+                return;
+
+            }
+
+            if (event.key === "ArrowUp") {
+
+                event.preventDefault();
+
+                moveActive(-1);
+
+                return;
+
+            }
+
+            if (event.key === "Enter") {
+
+                event.preventDefault();
+
+                const rows =
+                    Array.from(
+                        results.querySelectorAll(
+                            ".vietnam-location-search-result"
+                        )
+                    );
+
+                if (
+                    activeIndex >= 0 &&
+                    rows[activeIndex]
+                ) {
+
+                    rows[activeIndex].click();
+                    return;
+
+                }
+
+                const query =
+                    normalize(input.value);
+
+                const match =
+                    locations.find(function (item) {
+
+                        const values = [
+                            item.name,
+                            item.detail,
+                            ...(item.aliases || [])
+                        ];
+
+                        return values.some(function (value) {
+
+                            return normalize(value) === query;
+
+                        });
+
+                    });
+
+                if (match) {
+
+                    selectLocation(match);
+
+                } else {
+
+                    showResults();
+
+                }
+
+                return;
+
+            }
+
+            if (event.key === "Escape") {
+
+                hideResults();
+
+            }
+
+        });
+
+        clearButton.addEventListener("click", function () {
+
+            input.value = "";
+
+            clearButton.style.display = "none";
+
+            hideResults();
+
+            input.focus();
+
+        });
+
+        document.addEventListener("click", function (event) {
+
+            if (!container.contains(event.target)) {
+
+                hideResults();
+
+            }
+
+        });
+
+        console.log(
+            "VIETNAM LOCATION SEARCH: READY"
+        );
+
+    }
+
+    if (document.readyState === "loading") {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            init
+        );
+
+    } else {
+
+        init();
+
+    }
+
+})();
+</script>
+
+
+
+<script>
+/* ============================================================
+   AUTO COLOR OUTLINE
+   Mỗi input[type=color] sẽ có outline bằng chính màu của nó.
+   Tự cập nhật ngay khi người dùng đổi màu.
+   ============================================================ */
+
+(function () {
+    "use strict";
+
+    function updateColorOutline(input) {
+        if (!input || input.type !== "color") return;
+
+        let color = input.value;
+
+        if (!color || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+            color = "#000000";
+        }
+
+        input.classList.add("color-outline-auto");
+        input.style.setProperty("--color-outline", color);
+    }
+
+    function updateAllColorInputs(root) {
+        const scope = root || document;
+
+        scope.querySelectorAll('input[type="color"]').forEach(function (input) {
+            updateColorOutline(input);
+
+            if (!input.dataset.colorOutlineBound) {
+                input.addEventListener("input", function () {
+                    updateColorOutline(input);
+                });
+
+                input.addEventListener("change", function () {
+                    updateColorOutline(input);
+                });
+
+                input.dataset.colorOutlineBound = "1";
+            }
+        });
+    }
+
+    /* Initial */
+    function initColorOutlines() {
+        updateAllColorInputs(document);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initColorOutlines);
+    } else {
+        initColorOutlines();
+    }
+
+    /*
+     * Bắt các color input được tạo động bởi editor.
+     */
+    const observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function (node) {
+                if (node.nodeType !== 1) return;
+
+                if (node.matches && node.matches('input[type="color"]')) {
+                    updateAllColorInputs(node.parentElement || node);
+                } else if (node.querySelectorAll) {
+                    updateAllColorInputs(node);
+                }
+            });
+        });
+    });
+
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+    });
+
+    /*
+     * Một số editor thay đổi value bằng JavaScript.
+     * Kiểm tra định kỳ nhẹ để outline luôn đồng bộ.
+     */
+    setInterval(function () {
+        updateAllColorInputs(document);
+    }, 500);
+
+})();
+</script>
+
+
+
+
+
+
+<!-- =========================================================
+     ROAD WIDTH PREVIEW FINAL
+     ROAD + 5 OUTLINES / Z4-Z22
+     ========================================================= -->
+
+<style id="road-width-preview-final-style">
+#road-width-preview-final {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 350px;
+    z-index: 99999;
+    background: rgba(255,255,255,.97);
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.18);
+    font-family: Arial, sans-serif;
+}
+
+#road-width-preview-final .rw-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
+#road-width-preview-final label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: #374151;
+}
+
+#road-width-preview-final select,
+#road-width-preview-final input[type="number"] {
+    width: 100%;
+    height: 38px;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0 10px;
+    background: white;
+}
+
+#road-width-preview-final input[type="range"] {
+    width: 100%;
+}
+
+#road-width-preview-final .rw-row {
+    margin-bottom: 13px;
+}
+
+#road-width-preview-final .rw-zoom-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#road-width-preview-final .rw-value {
+    background: #f3f4f6;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+#road-width-preview-final .rw-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+#road-width-preview-final button {
+    height: 38px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#road-width-preview-final button:hover {
+    background: #f3f4f6;
+}
+</style>
+
+<div id="road-width-preview-final">
+    <div class="rw-title">Road Width Preview</div>
+
+    <div class="rw-row">
+        <label>Layer</label>
+        <select id="rw-final-layer">
+            <option value="road">Road</option>
+            <option value="road-motorway-outline">Motorway outline</option>
+            <option value="road-primary-outline">Primary outline</option>
+            <option value="road-secondary-outline">Secondary outline</option>
+            <option value="road-residential-outline">Residential outline</option>
+            <option value="road-minor-outline">Minor outline</option>
+        </select>
+    </div>
+
+    <div class="rw-row">
+        <div class="rw-zoom-line">
+            <label style="margin:0;">Zoom</label>
+            <strong id="rw-final-zoom-label">Z10</strong>
+        </div>
+
+        <input
+            id="rw-final-zoom"
+            type="range"
+            min="4"
+            max="22"
+            step="1"
+            value="10"
+        >
+    </div>
+
+    <div class="rw-row">
+        <label>Width preview (px)</label>
+
+        <input
+            id="rw-final-width"
+            type="number"
+            min="0"
+            max="30"
+            step="0.05"
+            value="2"
+        >
+
+        <input
+            id="rw-final-width-slider"
+            type="range"
+            min="0"
+            max="30"
+            step="0.05"
+            value="2"
+        >
+    </div>
+
+    <div class="rw-value">
+        Zoom hiện tại:
+        <b id="rw-final-current-zoom">Z10</b>
+        <br>
+        Width:
+        <b id="rw-final-current-width">2.00 px</b>
+        <br>
+        Layer:
+        <b id="rw-final-current-layer">Road</b>
+    </div>
+
+    <div class="rw-buttons">
+        <button id="rw-final-apply">Áp dụng preview</button>
+        <button id="rw-final-reset">Reset</button>
+    </div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    const LAYERS = {
+        "road": {
+            label: "Road",
+            outline: false
+        },
+
+        "road-motorway-outline": {
+            label: "Motorway outline",
+            outline: true
+        },
+
+        "road-primary-outline": {
+            label: "Primary outline",
+            outline: true
+        },
+
+        "road-secondary-outline": {
+            label: "Secondary outline",
+            outline: true
+        },
+
+        "road-residential-outline": {
+            label: "Residential outline",
+            outline: true
+        },
+
+        "road-minor-outline": {
+            label: "Minor outline",
+            outline: true
+        }
+    };
+
+    const OUTLINES = [
+        "road-motorway-outline",
+        "road-primary-outline",
+        "road-secondary-outline",
+        "road-residential-outline",
+        "road-minor-outline"
+    ];
+
+    let originalWidths = {};
+    let originalOrder = [];
+    let ready = false;
+
+    const panel = document.getElementById(
+        "road-width-preview-final"
+    );
+
+    const layerSelect = document.getElementById(
+        "rw-final-layer"
+    );
+
+    const zoomSlider = document.getElementById(
+        "rw-final-zoom"
+    );
+
+    const zoomLabel = document.getElementById(
+        "rw-final-zoom-label"
+    );
+
+    const widthInput = document.getElementById(
+        "rw-final-width"
+    );
+
+    const widthSlider = document.getElementById(
+        "rw-final-width-slider"
+    );
+
+    const currentZoom = document.getElementById(
+        "rw-final-current-zoom"
+    );
+
+    const currentWidth = document.getElementById(
+        "rw-final-current-width"
+    );
+
+    const currentLayer = document.getElementById(
+        "rw-final-current-layer"
+    );
+
+    function getMap() {
+        return window.__styleEditorMap ||
+            window.map ||
+            null;
+    }
+
+    function evaluateWidth(expression, zoom) {
+        if (typeof expression === "number") {
+            return expression;
+        }
+
+        if (!Array.isArray(expression)) {
+            return null;
+        }
+
+        if (
+            expression[0] !== "interpolate" ||
+            !Array.isArray(expression[1]) ||
+            expression[1][0] !== "linear"
+        ) {
+            return null;
+        }
+
+        const stops = expression.slice(3);
+
+        if (stops.length < 2) {
+            return null;
+        }
+
+        for (let i = 0; i <= stops.length - 4; i += 2) {
+            const z1 = Number(stops[i]);
+            const w1 = Number(stops[i + 1]);
+            const z2 = Number(stops[i + 2]);
+            const w2 = Number(stops[i + 3]);
+
+            if (
+                Number.isFinite(z1) &&
+                Number.isFinite(w1) &&
+                Number.isFinite(z2) &&
+                Number.isFinite(w2) &&
+                zoom >= z1 &&
+                zoom <= z2
+            ) {
+                if (z2 === z1) {
+                    return w2;
+                }
+
+                const t = (zoom - z1) / (z2 - z1);
+
+                return w1 + (w2 - w1) * t;
+            }
+        }
+
+        if (zoom <= Number(stops[0])) {
+            return Number(stops[1]);
+        }
+
+        return Number(stops[stops.length - 1]);
+    }
+
+    function captureOriginal() {
+        const m = getMap();
+
+        if (!m) {
+            return false;
+        }
+
+        const style = m.getStyle();
+
+        if (
+            style &&
+            Array.isArray(style.layers) &&
+            originalOrder.length === 0
+        ) {
+            originalOrder = style.layers.map(
+                layer => layer.id
+            );
+        }
+
+        for (const id of Object.keys(LAYERS)) {
+            if (!m.getLayer(id)) {
+                continue;
+            }
+
+            if (originalWidths[id] === undefined) {
+                try {
+                    originalWidths[id] =
+                        m.getPaintProperty(
+                            id,
+                            "line-width"
+                        );
+                } catch (e) {
+                    console.warn(
+                        "Không đọc được width:",
+                        id,
+                        e
+                    );
+                }
+            }
+        }
+
+        return true;
+    }
+
+    function restoreOrder() {
+        const m = getMap();
+
+        if (!m || !originalOrder.length) {
+            return;
+        }
+
+        /*
+         * Restore toàn bộ thứ tự layer ban đầu.
+         * moveLayer(id, beforeId) được chạy từ cuối -> đầu
+         * để đưa style về đúng thứ tự ban đầu.
+         */
+        for (
+            let i = originalOrder.length - 1;
+            i >= 0;
+            i--
+        ) {
+            const id = originalOrder[i];
+
+            if (!m.getLayer(id)) {
+                continue;
+            }
+
+            const beforeId =
+                originalOrder[i + 1];
+
+            try {
+                if (
+                    beforeId &&
+                    m.getLayer(beforeId)
+                ) {
+                    m.moveLayer(id, beforeId);
+                } else {
+                    m.moveLayer(id);
+                }
+            } catch (e) {}
+        }
+    }
+
+    function makeOutlinesVisible() {
+        const m = getMap();
+
+        if (!m || !m.getLayer("road")) {
+            return;
+        }
+
+        /*
+         * Outline nằm dưới road trong style gốc.
+         * Không thay đổi expression gốc.
+         *
+         * Khi preview outline:
+         *   outline được đưa lên trên road
+         * để người dùng luôn nhìn thấy width đang chỉnh.
+         */
+        for (const id of OUTLINES) {
+            if (!m.getLayer(id)) {
+                continue;
+            }
+
+            try {
+                m.moveLayer(id);
+            } catch (e) {}
+        }
+    }
+
+    function getCurrentWidth() {
+        const m = getMap();
+
+        if (!m) {
+            return null;
+        }
+
+        const id = layerSelect.value;
+        const z = Number(zoomSlider.value);
+
+        try {
+            const expression =
+                originalWidths[id] !== undefined
+                    ? originalWidths[id]
+                    : m.getPaintProperty(
+                        id,
+                        "line-width"
+                    );
+
+            return evaluateWidth(
+                expression,
+                z
+            );
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function updateUI() {
+        const z = Number(
+            zoomSlider.value
+        );
+
+        const w = Number(
+            widthInput.value
+        );
+
+        const id =
+            layerSelect.value;
+
+        zoomLabel.textContent =
+            "Z" + z;
+
+        currentZoom.textContent =
+            "Z" + z;
+
+        currentWidth.textContent =
+            Number.isFinite(w)
+                ? w.toFixed(2) + " px"
+                : "0.00 px";
+
+        currentLayer.textContent =
+            LAYERS[id]
+                ? LAYERS[id].label
+                : id;
+    }
+
+    function loadOriginalWidthForZoom() {
+        captureOriginal();
+
+        const w =
+            getCurrentWidth();
+
+        if (
+            w !== null &&
+            Number.isFinite(w)
+        ) {
+            widthInput.value =
+                w.toFixed(2);
+
+            widthSlider.value =
+                String(
+                    Math.max(
+                        0,
+                        Math.min(
+                            30,
+                            w
+                        )
+                    )
+                );
+        }
+
+        updateUI();
+    }
+
+    function setPreviewWidth() {
+        const m = getMap();
+
+        if (!m) {
+            return;
+        }
+
+        const id =
+            layerSelect.value;
+
+        let width =
+            Number(widthInput.value);
+
+        if (!Number.isFinite(width)) {
+            width = 0;
+        }
+
+        width =
+            Math.max(
+                0,
+                Math.min(
+                    30,
+                    width
+                )
+            );
+
+        widthInput.value =
+            width.toFixed(2);
+
+        widthSlider.value =
+            String(width);
+
+        try {
+            /*
+             * Chỉ thay đổi runtime paint property.
+             * Expression gốc vẫn nằm trong originalWidths.
+             */
+            m.setPaintProperty(
+                id,
+                "line-width",
+                width
+            );
+
+            /*
+             * Đưa outline lên trên road trong preview
+             * để width đang chỉnh luôn nhìn thấy.
+             */
+            if (LAYERS[id].outline) {
+                makeOutlinesVisible();
+            }
+
+            updateUI();
+
+            console.log(
+                "[Road Width Preview]",
+                id,
+                "Z" + zoomSlider.value,
+                width + "px"
+            );
+        } catch (e) {
+            console.error(
+                "Không áp dụng width preview:",
+                id,
+                e
+            );
+        }
+    }
+
+    function resetPreview() {
+        const m = getMap();
+
+        if (!m) {
+            return;
+        }
+
+        captureOriginal();
+
+        /*
+         * Khôi phục expression width gốc.
+         */
+        for (
+            const [id, expression]
+            of Object.entries(
+                originalWidths
+            )
+        ) {
+            if (!m.getLayer(id)) {
+                continue;
+            }
+
+            try {
+                m.setPaintProperty(
+                    id,
+                    "line-width",
+                    expression
+                );
+            } catch (e) {}
+        }
+
+        /*
+         * Khôi phục thứ tự layer gốc.
+         */
+        restoreOrder();
+
+        loadOriginalWidthForZoom();
+
+        console.log(
+            "[Road Width Preview] RESET"
+        );
+    }
+
+    function setZoom() {
+        const m = getMap();
+
+        const z = Number(
+            zoomSlider.value
+        );
+
+        if (m) {
+            try {
+                m.setZoom(z);
+            } catch (e) {}
+        }
+
+        /*
+         * Không thay đổi expression.
+         * Chỉ đọc width gốc tại zoom mới.
+         */
+        loadOriginalWidthForZoom();
+
+        /*
+         * Nếu đang chọn outline,
+         * giữ outline visible.
+         */
+        if (
+            LAYERS[
+                layerSelect.value
+            ].outline
+        ) {
+            makeOutlinesVisible();
+        }
+    }
+
+    function onLayerChange() {
+        /*
+         * Reset runtime width của layer trước
+         * expression gốc trước khi đổi layer.
+         */
+        resetPreview();
+
+        loadOriginalWidthForZoom();
+
+        if (
+            LAYERS[
+                layerSelect.value
+            ].outline
+        ) {
+            makeOutlinesVisible();
+        }
+    }
+
+    function syncSlider() {
+        widthInput.value =
+            Number(
+                widthSlider.value
+            ).toFixed(2);
+
+        updateUI();
+    }
+
+    function syncInput() {
+        let w =
+            Number(
+                widthInput.value
+            );
+
+        if (!Number.isFinite(w)) {
+            w = 0;
+        }
+
+        w =
+            Math.max(
+                0,
+                Math.min(
+                    30,
+                    w
+                )
+            );
+
+        widthInput.value =
+            w.toFixed(2);
+
+        widthSlider.value =
+            String(w);
+
+        updateUI();
+    }
+
+    function init() {
+        const m = getMap();
+
+        if (!m) {
+            setTimeout(init, 300);
+            return;
+        }
+
+        if (!captureOriginal()) {
+            setTimeout(init, 300);
+            return;
+        }
+
+        if (ready) {
+            return;
+        }
+
+        ready = true;
+
+        /*
+         * Bắt đầu ở Z10.
+         */
+        try {
+            m.setZoom(
+                Number(
+                    zoomSlider.value
+                )
+            );
+        } catch (e) {}
+
+        loadOriginalWidthForZoom();
+
+        zoomSlider.addEventListener(
+            "input",
+            setZoom
+        );
+
+        widthSlider.addEventListener(
+            "input",
+            syncSlider
+        );
+
+        widthInput.addEventListener(
+            "input",
+            syncInput
+        );
+
+        layerSelect.addEventListener(
+            "change",
+            onLayerChange
+        );
+
+        document.getElementById(
+            "rw-final-apply"
+        ).addEventListener(
+            "click",
+            setPreviewWidth
+        );
+
+        document.getElementById(
+            "rw-final-reset"
+        ).addEventListener(
+            "click",
+            resetPreview
+        );
+
+        updateUI();
+
+        console.log(
+            "[Road Width Preview FINAL] READY",
+            Object.keys(LAYERS)
+        );
+    }
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+        document.addEventListener(
+            "DOMContentLoaded",
+            init
+        );
+    } else {
+        init();
+    }
+})();
+</script>
+
+</body>
+</html>

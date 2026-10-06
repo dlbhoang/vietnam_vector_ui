@@ -1,0 +1,17 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location = /api { proxy_pass ${API_UPSTREAM}; include /etc/nginx/proxy_params; }
+    location ^~ /api/ { proxy_pass ${API_UPSTREAM}; include /etc/nginx/proxy_params; }
+    location = /directions { proxy_pass ${API_UPSTREAM}; include /etc/nginx/proxy_params; }
+    location ^~ /styles/ { proxy_pass ${API_UPSTREAM}; include /etc/nginx/proxy_params; }
+    location ^~ /icons/ { proxy_pass ${API_UPSTREAM}; include /etc/nginx/proxy_params; }
+    location ^~ /data/islands/ { proxy_pass ${API_UPSTREAM}; include /etc/nginx/proxy_params; }
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
