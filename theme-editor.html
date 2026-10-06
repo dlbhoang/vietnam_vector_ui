@@ -1888,7 +1888,7 @@ async function saveTheme() {
   try {
     const res = await fetch("/api/theme", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-admin-token": localStorage.getItem("poiIconToken") || "" },
       body: JSON.stringify(theme),
     });
     const data = await res.json();
@@ -3353,7 +3353,8 @@ setTimeout(function () {
 
                             headers: {
                                 "Content-Type":
-                                    "application/json"
+                                    "application/json",
+                                "x-admin-token": localStorage.getItem("poiIconToken") || ""
                             },
 
                             body:
@@ -3891,7 +3892,7 @@ setTimeout(function () {
       try{
         const r = await fetch("/api/poi-icons/mapping", {
           method: "POST",
-          headers: {"Content-Type":"application/json"},
+          headers: {"Content-Type":"application/json", "x-admin-token": localStorage.getItem("poiIconToken") || ""},
           body: JSON.stringify({poi, icon})
         });
 
@@ -5856,7 +5857,7 @@ setTimeout(function () {
     var payload = buildPayload();
     return origFetch("/api/route-style", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-admin-token": localStorage.getItem("poiIconToken") || "" },
       body: JSON.stringify(payload)
     })
       .then(function (r) { return r.json(); })

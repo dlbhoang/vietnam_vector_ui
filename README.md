@@ -28,5 +28,6 @@ Set `API_UPSTREAM` to the private or public origin of the API service. Configure
 - `056f3b8` — added the web map client and routed API-bound requests through the UI gateway.
 - `1c397e4` — recorded the initial repository history and the ongoing change-log convention.
 - `d3ae54e` — updated the change log to record the repository-history documentation commit.
+- Added the API admin token to theme, route-style and POI mapping write requests; pair with API branch `codex/api-production-hardening` (`vietnam_vector` commit `9175803`).
 
 For each later commit, add a short entry here describing its user-visible or deployment change.
