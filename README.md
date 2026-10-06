@@ -22,3 +22,10 @@ Set `API_UPSTREAM` to the private or public origin of the API service. Configure
 - `style-editor.html`: map style editor.
 - `index.html`: editor landing page.
 - `nginx/`: reverse-proxy configuration for the API service.
+
+## Change log
+
+- `fdbf1e0` — created the standalone editor UI repository with the theme editor, style editor, landing page, and Nginx gateway container.
+- `056f3b8` — added the web map client and routed API-bound requests through the UI gateway.
+
+For each later commit, add a short entry here describing its user-visible or deployment change.
